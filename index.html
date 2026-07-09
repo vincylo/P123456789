@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>專案時程共編甘特圖</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --head: #b9cbe8;
+      --section: #dfe8f6;
+      --bar-overall: #475569;
+      --bar-pm: #2563eb;
+      --bar-system: #059669;
+      --bar-data: #d97706;
+      --bar-model: #7c3aed;
+      --danger: #b91c1c;
+      --ok: #047857;
+      --warn: #b45309;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .08);
+      --dayw: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "PingFang TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    header {
+      padding: 6px 14px 5px;
+      background: linear-gradient(180deg, #ffffff, #f7f9fd);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      letter-spacing: .5px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button, select {
+      border: 1px solid #9ca3af;
+      background: #fff;
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    button.primary {
+      background: #1f4e8c;
+      color: white;
+      border-color: #1f4e8c;
+    }
+
+    button.danger {
+      color: var(--danger);
+      border-color: #fca5a5;
+    }
+
+    button:hover, select:hover { filter: brightness(.98); }
+
+    .status {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .status.err { color: var(--danger); }
+
+    main { padding: 8px 12px 18px; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      padding: 7px 11px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: #fbfcff;
+    }
+
+    .panel-title h2 { margin: 0; font-size: 14px; }
+
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
+    .legend-dot.pm { background: var(--bar-pm); }
+    .legend-dot.system { background: var(--bar-system); }
+    .legend-dot.data { background: var(--bar-data); }
+    .legend-dot.model { background: var(--bar-model); }
+    .legend-dot.overall { background: var(--bar-overall); }
+
+    .table-wrap {
+      overflow: auto;
+      height: min(45vh, 360px);
+      min-height: 260px;
+      position: relative;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1320px;
+      font-size: 10px;
+      zoom: .78;
+    }
+
+    th, td {
+      border: 1px solid #4b5563;
+      padding: 1px 2px;
+      vertical-align: middle;
+    }
+
+    thead th {
+      background: var(--head);
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      text-align: center;
+      font-weight: 700;
+      background-clip: padding-box;
+    }
+
+    thead tr:first-child th { height: 27px; }
+    thead tr:nth-child(2) th { top: 27px; background: #d6e1f4; z-index: 7; }
+
+    /* 凍結表格左側「項目」欄，橫向捲動時仍可看到每列標題 */
+    thead tr:first-child th:first-child {
+      left: 0;
+      z-index: 16;
+      min-width: 210px;
+      width: 210px;
+      box-shadow: 2px 0 0 rgba(75,85,99,.45);
+    }
+
+    tbody tr.section-row td { background: var(--section); font-weight: 700; }
+    tbody tr:hover td { background-color: #fff7ed; }
+    tbody tr.section-row:hover td { background-color: #d7e2f3; }
+
+    tbody tr.closed-row td {
+      background: #e5e7eb !important;
+      color: #6b7280;
+    }
+    tbody tr.closed-row input,
+    tbody tr.closed-row button {
+      color: #6b7280;
+      background-color: #f3f4f6;
+    }
+    tbody tr.closed-row .item-input {
+      text-decoration: line-through;
+    }
+    .closed-cell {
+      min-width: 34px;
+      width: 34px;
+      text-align: center;
+    }
+    .closed-cell input { width: 14px; height: 14px; }
+
+    td.item-cell {
+      min-width: 210px;
+      width: 210px;
+      max-width: 210px;
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: #fff;
+      box-shadow: 2px 0 0 rgba(75,85,99,.35);
+    }
+    tbody tr.section-row td.item-cell { background: var(--section); z-index: 5; }
+    tbody tr:hover td.item-cell { background-color: #fff7ed; }
+    tbody tr.section-row:hover td.item-cell { background-color: #d7e2f3; }
+    .item-input, .notes-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font: inherit;
+      padding: 2px 2px;
+      outline: none;
+    }
+    .section-row .item-input { font-weight: 700; }
+
+    .owner-cell, .lead-cell, .action-cell { text-align: center; }
+    .action-cell { min-width: 130px; white-space: nowrap; }
+    .owner-cell { min-width: 30px; width: 30px; }
+    .owner-cell input { width: 14px; height: 14px; }
+
+    input[type="date"] {
+      width: 82px;
+      min-width: 82px;
+      max-width: 82px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      padding: 2px 1px;
+      font: inherit;
+      font-size: 11px;
+      background: #fff;
+    }
+
+    .date-cell { min-width: 86px; width: 86px; max-width: 86px; }
+
+    .team-date-disabled { opacity: .45; }
+    .lead-cell { min-width: 34px; width: 34px; text-align: center; }
+    .lead-cell.invalid { color: var(--danger); font-weight: 700; }
+    .notes-cell { min-width: 180px; width: 180px; }
+
+    .mini-btn {
+      padding: 3px 5px;
+      border-radius: 6px;
+      font-size: 10px;
+      margin: 1px;
+    }
+
+    .gantt-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .gantt-wrap { overflow: auto; padding-bottom: 8px; height: min(26vh, 220px); min-height: 170px; position: relative; }
+    .gantt { min-width: 720px; padding: 4px 7px 8px; }
+
+    .gantt-head, .gantt-row {
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      align-items: center;
+    }
+
+    .gantt-head {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+      padding-top: 4px;
+      box-shadow: 0 2px 0 rgba(203,213,225,.85);
+    }
+
+    .gantt-label {
+      padding: 2px 8px 2px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: #fff;
+      box-shadow: 2px 0 0 rgba(203,213,225,.85);
+    }
+    .gantt-head .gantt-label { z-index: 12; font-weight: 700; }
+
+    .gantt-row.section .gantt-label { font-weight: 700; background: #f3f6fc; }
+
+    .gantt-row.closed .gantt-label {
+      background: #e5e7eb;
+      color: #6b7280;
+      text-decoration: line-through;
+    }
+    .gantt-row.closed .timeline { background-color: #f3f4f6; }
+    .gantt-row.closed .bar {
+      background: #9ca3af !important;
+      opacity: .58;
+    }
+
+    .timeline {
+      position: relative;
+      height: 20px;
+      min-width: calc(var(--days) * var(--dayw));
+      background-image: linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px);
+      background-size: var(--dayw) 100%;
+      border-left: 1px solid #cbd5e1;
+    }
+
+    .scale {
+      position: relative;
+      height: 26px;
+      min-width: calc(var(--days) * var(--dayw));
+      border-left: 1px solid #cbd5e1;
+      background-image: linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px);
+      background-size: var(--dayw) 100%;
+    }
+
+    .tick {
+      position: absolute;
+      top: 2px;
+      font-size: 11px;
+      color: #475569;
+      white-space: nowrap;
+      transform: translateX(3px);
+    }
+
+    .month-tick {
+      position: absolute;
+      bottom: 2px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1f2937;
+      white-space: nowrap;
+      transform: translateX(3px);
+    }
+
+    .bar {
+      position: absolute;
+      height: 10px;
+      border-radius: 5px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+      min-width: 10px;
+    }
+
+    .bar.pm { background: var(--bar-pm); }
+    .bar.system { background: var(--bar-system); }
+    .bar.data { background: var(--bar-data); }
+    .bar.model { background: var(--bar-model); }
+    .bar.overall { background: var(--bar-overall); }
+    .bar.section { opacity: .75; }
+
+    .bar span {
+      position: absolute;
+      left: 8px;
+      top: 0;
+      color: white;
+      font-size: 11px;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0,0,0,.28);
+      line-height: 10px;
+    }
+
+    .bar span { font-size: 10px; }
+
+    .empty { padding: 18px; color: var(--muted); }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      margin: 8px 4px 0;
+    }
+
+    @media (max-width: 760px) {
+      header, main { padding-left: 12px; padding-right: 12px; }
+      .status { margin-left: 0; width: 100%; }
+      .gantt-head, .gantt-row { grid-template-columns: 240px 1fr; }
+      .gantt-label { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>專案時程共編甘特圖</h1>
+    <div class="toolbar">
+      <button class="primary" id="addRowBtn">新增列</button>
+      <button id="exportCsvBtn">匯出 CSV</button>
+      <button id="saveNowBtn">立即儲存</button>
+      <button class="danger" id="resetBtn">重置為圖片範例</button>
+      <label class="hint">Lead Time：</label>
+      <select id="calcMode">
+        <option value="business" selected>工作天，含起迄日，不含六日</option>
+        <option value="calendar">日曆天，含起迄日</option>
+      </select>
+      <span id="status" class="status warn">初始化中...</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-title">
+        <h2>甘特圖</h2>
+        <div class="gantt-controls">
+          <label class="hint">顯示：</label>
+          <select id="ganttMode">
+            <option value="all" selected>全部 Team 分色</option>
+            <option value="overall">總覽</option>
+            <option value="pm_fae">PM/FAE</option>
+            <option value="system">SYSTEM</option>
+            <option value="data">DATA</option>
+            <option value="model">MODEL</option>
+          </select>
+          <span class="legend">
+            <span class="legend-item"><i class="legend-dot pm"></i>PM/FAE</span>
+            <span class="legend-item"><i class="legend-dot system"></i>SYSTEM</span>
+            <span class="legend-item"><i class="legend-dot data"></i>DATA</span>
+            <span class="legend-item"><i class="legend-dot model"></i>MODEL</span>
+            <span class="legend-item"><i class="legend-dot overall"></i>總覽</span>
+          </span>
+        </div>
+      </div>
+      <div class="gantt-wrap">
+        <div id="gantt" class="gantt"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>任務表</h2>
+        <span class="hint">表格標題列與左側項目欄已凍結；可勾選結案，結案列會變灰。</span>
+      </div>
+      <div class="table-wrap">
+        <table id="taskTable">
+          <thead>
+            <tr>
+              <th rowspan="2">項目</th>
+              <th rowspan="2">結案</th>
+              <th colspan="4">PM/FAE</th>
+              <th colspan="4">SYSTEM</th>
+              <th colspan="4">DATA</th>
+              <th colspan="4">MODEL</th>
+              <th rowspan="2">總 Lead<br>Time</th>
+              <th rowspan="2">備註</th>
+              <th rowspan="2">操作</th>
+            </tr>
+            <tr>
+              <th>負責</th><th>start</th><th>end</th><th>LT</th>
+              <th>負責</th><th>start</th><th>end</th><th>LT</th>
+              <th>負責</th><th>start</th><th>end</th><th>LT</th>
+              <th>負責</th><th>start</th><th>end</th><th>LT</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      共編保存方式：若 config.js 已設定 Supabase，資料會儲存在雲端資料庫並即時同步給其他開啟此網頁的人；若未設定，資料只會存在目前瀏覽器的 localStorage。<br>
+      v7 更新：甘特圖與表格視窗改得更扁；每列新增結案勾選，勾選後表格與甘特圖會以灰色顯示。
+    </p>
+  </main>
+
+  <script>
+    const TEAM_DEFS = [
+      { key: 'pm_fae', label: 'PM/FAE', ownerField: 'pm_fae', startField: 'pm_fae_start_date', endField: 'pm_fae_end_date', className: 'pm' },
+      { key: 'system', label: 'SYSTEM', ownerField: 'owner_system', startField: 'system_start_date', endField: 'system_end_date', className: 'system' },
+      { key: 'data', label: 'DATA', ownerField: 'owner_data', startField: 'data_start_date', endField: 'data_end_date', className: 'data' },
+      { key: 'model', label: 'MODEL', ownerField: 'owner_model', startField: 'model_start_date', endField: 'model_end_date', className: 'model' }
+    ];
+
+    const DEFAULT_TASKS = [
+      { id: 'sec-0', seq: 0, item: '0. 專案前置', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '' },
+      { id: '0.1', seq: 1, item: '0.1 需求確認-SOW', is_section: false, pm_fae: true, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '2026-05-12' },
+      { id: '0.2', seq: 2, item: '0.2 PR/PO', is_section: false, pm_fae: true, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-06-17', end_date: '' },
+      { id: '0.3', seq: 3, item: '0.3 需求訪談與邏輯確認', is_section: false, pm_fae: true, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '' },
+      { id: '0.4', seq: 4, item: '0.4 資料完整性確認比對', is_section: false, pm_fae: true, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-06-15', end_date: '2026-09-01' },
+      { id: 'sec-1', seq: 5, item: '1. 內部環境建置', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-07-13', end_date: '2026-07-24' },
+      { id: '1.1', seq: 6, item: '1.1 建Server', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-07-13', end_date: '2026-07-17' },
+      { id: '1.2', seq: 7, item: '1.2 Server環境安裝', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-07-20', end_date: '2026-07-21' },
+      { id: '1.3', seq: 8, item: '1.3 初版資料讀資料preload進DB', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-07-22', end_date: '2026-07-24' },
+      { id: '1.4', seq: 9, item: '1.4 Routine讓資料preload進DB', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '', end_date: '2026-08-11' },
+      { id: 'sec-2', seq: 10, item: '2. 資料驗證', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '' },
+      { id: '2.1', seq: 11, item: '2.1 資料驗證', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-07-27', end_date: '2026-08-07' },
+      { id: 'sec-3', seq: 12, item: '3. 功能驗證', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-07-27', end_date: '2026-09-14' },
+      { id: '3.1', seq: 13, item: '3.1 機台平台分配', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-07-27', end_date: '2026-07-27' },
+      { id: '3.2', seq: 14, item: '3.2 光罩連批', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-07-28', end_date: '2026-07-28' },
+      { id: '3.3', seq: 15, item: '3.3 Lot Priority', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-07-29', end_date: '2026-07-29' },
+      { id: '3.4', seq: 16, item: '3.4 Qtime 防守', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-07-30', end_date: '2026-07-30' },
+      { id: '3.5', seq: 17, item: '3.5 WIP CR', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-07-31', end_date: '2026-07-31' },
+      { id: '3.6', seq: 18, item: '3.6 LOT & EQP Constraint', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-08-03', end_date: '2026-08-03' },
+      { id: '3.7', seq: 19, item: '3.7 LOT & 光罩Constraint', is_section: false, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-08-04', end_date: '2026-08-04' },
+      { id: '3.8', seq: 20, item: '3.8 EQP PM Constraint', is_section: false, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-08-05', end_date: '2026-08-05' },
+      { id: '3.9', seq: 21, item: '3.9 Manual Trigger', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-08-06', end_date: '2026-08-06' },
+      { id: '3.10', seq: 22, item: '3.10 Server Monitor行狀態', is_section: false, pm_fae: false, owner_system: true, owner_data: false, owner_model: false, start_date: '2026-08-07', end_date: '2026-08-07' },
+      { id: '3.11', seq: 23, item: '3.11 前N順位鎖定', is_section: false, pm_fae: false, owner_system: false, owner_data: true, owner_model: true, start_date: '2026-08-10', end_date: '2026-08-10' },
+      { id: '3.14', seq: 24, item: '3.14 整合測試', is_section: false, pm_fae: true, owner_system: false, owner_data: false, owner_model: false, start_date: '2026-08-11', end_date: '2026-08-28' }
+    ];
+
+    const cfg = window.PROJECT_GANTT_CONFIG || {};
+    const hasSupabaseConfig = Boolean(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase);
+    const TABLE = cfg.TABLE_NAME || 'project_tasks';
+    const storageKey = 'project_gantt_tasks_v2';
+    const legacyStorageKey = 'project_gantt_tasks_v1';
+    const modeKey = 'project_gantt_calc_mode_v1';
+    const ganttModeKey = 'project_gantt_view_mode_v2';
+
+    let db = null;
+    let tasks = [];
+    let saveTimer = null;
+    let isRemoteMode = false;
+    let channel = null;
+    let ignoreRemoteUntil = 0;
+
+    const tbody = document.querySelector('#taskTable tbody');
+    const statusEl = document.getElementById('status');
+    const calcModeEl = document.getElementById('calcMode');
+    const ganttModeEl = document.getElementById('ganttMode');
+
+    function setStatus(text, type = 'warn') {
+      statusEl.textContent = text;
+      statusEl.className = `status ${type}`;
+    }
+
+    function markLocalEditing(ms = 1800) {
+      ignoreRemoteUntil = Date.now() + ms;
+    }
+
+    function cloneDefaults() {
+      return DEFAULT_TASKS.map((t, idx) => normalizeTask({ ...t }, idx));
+    }
+
+    function cleanDate(value) {
+      return value ? String(value).slice(0, 10) : '';
+    }
+
+    function normalizeTask(t, idx = 0) {
+      const normalized = {
+        id: String(t.id || `task-${Date.now()}-${idx}`),
+        seq: Number.isFinite(Number(t.seq)) ? Number(t.seq) : idx,
+        item: t.item || '',
+        is_section: Boolean(t.is_section),
+        is_closed: Boolean(t.is_closed),
+        pm_fae: Boolean(t.pm_fae),
+        owner_system: Boolean(t.owner_system),
+        owner_data: Boolean(t.owner_data),
+        owner_model: Boolean(t.owner_model),
+        start_date: cleanDate(t.start_date),
+        end_date: cleanDate(t.end_date),
+        pm_fae_start_date: cleanDate(t.pm_fae_start_date),
+        pm_fae_end_date: cleanDate(t.pm_fae_end_date),
+        system_start_date: cleanDate(t.system_start_date),
+        system_end_date: cleanDate(t.system_end_date),
+        data_start_date: cleanDate(t.data_start_date),
+        data_end_date: cleanDate(t.data_end_date),
+        model_start_date: cleanDate(t.model_start_date),
+        model_end_date: cleanDate(t.model_end_date),
+        notes: t.notes || ''
+      };
+
+      // 舊版資料只有 start_date / end_date，升級時帶到有勾負責的 Team 欄位。
+      TEAM_DEFS.forEach(team => {
+        if (!normalized[team.startField] && normalized[team.ownerField]) normalized[team.startField] = normalized.start_date;
+        if (!normalized[team.endField] && normalized[team.ownerField]) normalized[team.endField] = normalized.end_date;
+      });
+
+      const overall = getOverallRange(normalized);
+      normalized.start_date = overall.start || normalized.start_date;
+      normalized.end_date = overall.end || normalized.end_date;
+      return normalized;
+    }
+
+    function sortTasks(list) {
+      return [...list].map(normalizeTask).sort((a, b) => a.seq - b.seq || a.id.localeCompare(b.id));
+    }
+
+    function parseISODate(value) {
+      if (!value) return null;
+      const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function diffDaysInclusive(start, end) {
+      return Math.floor((end - start) / 86400000) + 1;
+    }
+
+    function calcLead(startValue, endValue) {
+      const start = parseISODate(startValue);
+      const end = parseISODate(endValue);
+      if (!start || !end) return { text: '', invalid: false };
+      if (end < start) return { text: '日期錯誤', invalid: true };
+      const mode = calcModeEl.value;
+      if (mode === 'calendar') return { text: String(diffDaysInclusive(start, end)), invalid: false };
+      let count = 0;
+      for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) count += 1;
+      }
+      return { text: String(count), invalid: false };
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>'"]/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[c]));
+    }
+
+    function dateForDb(value) {
+      return value ? value : null;
+    }
+
+    function getTeamSegments(t) {
+      return TEAM_DEFS.map(team => {
+        const startObj = parseISODate(t[team.startField]);
+        const endObj = parseISODate(t[team.endField]);
+        return {
+          ...team,
+          checked: Boolean(t[team.ownerField]),
+          start: t[team.startField] || '',
+          end: t[team.endField] || '',
+          startObj,
+          endObj,
+          valid: Boolean(startObj && endObj && endObj >= startObj)
+        };
+      });
+    }
+
+    function getOverallRange(t) {
+      const dates = [];
+      TEAM_DEFS.forEach(team => {
+        const s = parseISODate(t[team.startField]);
+        const e = parseISODate(t[team.endField]);
+        if (s) dates.push(s);
+        if (e) dates.push(e);
+      });
+
+      if (!dates.length) {
+        return { start: cleanDate(t.start_date), end: cleanDate(t.end_date) };
+      }
+
+      const minStart = new Date(Math.min(...dates.map(d => d.getTime())));
+      const maxEnd = new Date(Math.max(...dates.map(d => d.getTime())));
+      return { start: toISODate(minStart), end: toISODate(maxEnd) };
+    }
+
+    function toISODate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function teamCells(t, team) {
+      const lead = calcLead(t[team.startField], t[team.endField]);
+      const disabledClass = t[team.ownerField] ? '' : 'team-date-disabled';
+      return `
+        <td class="owner-cell"><input type="checkbox" data-field="${team.ownerField}" ${t[team.ownerField] ? 'checked' : ''}></td>
+        <td class="date-cell ${disabledClass}"><input type="date" data-field="${team.startField}" value="${escapeHtml(t[team.startField])}"></td>
+        <td class="date-cell ${disabledClass}"><input type="date" data-field="${team.endField}" value="${escapeHtml(t[team.endField])}"></td>
+        <td class="lead-cell ${lead.invalid ? 'invalid' : ''}">${escapeHtml(lead.text)}</td>
+      `;
+    }
+
+    function renderTable() {
+      tbody.innerHTML = tasks.map(t => {
+        const overall = getOverallRange(t);
+        const lead = calcLead(overall.start, overall.end);
+        const rowClass = [t.is_section ? 'section-row' : '', t.is_closed ? 'closed-row' : ''].filter(Boolean).join(' ');
+        return `
+          <tr class="${rowClass}" data-id="${escapeHtml(t.id)}">
+            <td class="item-cell"><input class="item-input" data-field="item" value="${escapeHtml(t.item)}" /></td>
+            <td class="closed-cell"><input type="checkbox" data-field="is_closed" title="勾選結案" ${t.is_closed ? 'checked' : ''}></td>
+            ${TEAM_DEFS.map(team => teamCells(t, team)).join('')}
+            <td class="lead-cell ${lead.invalid ? 'invalid' : ''}">${escapeHtml(lead.text)}</td>
+            <td class="notes-cell"><input class="notes-input" data-field="notes" placeholder="可填寫進度、風險、卡關原因..." value="${escapeHtml(t.notes)}" /></td>
+            <td class="action-cell">
+              <button class="mini-btn" data-action="insert-after">＋下方列</button>
+              <button class="mini-btn" data-action="toggle-section">${t.is_section ? '一般列' : '階段列'}</button>
+              <button class="mini-btn" data-action="clear">清除資料</button>
+              <button class="mini-btn" data-action="delete">刪除</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatShortDate(d) {
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+
+    function segmentsForTask(t, mode) {
+      const teams = getTeamSegments(t).filter(s => s.valid);
+      if (mode === 'overall') {
+        const overall = getOverallRange(t);
+        const startObj = parseISODate(overall.start);
+        const endObj = parseISODate(overall.end);
+        return startObj && endObj && endObj >= startObj ? [{
+          key: 'overall', label: '總覽', className: 'overall', start: overall.start, end: overall.end, startObj, endObj
+        }] : [];
+      }
+      if (mode !== 'all') return teams.filter(s => s.key === mode);
+      if (teams.length) return teams;
+      const startObj = parseISODate(t.start_date);
+      const endObj = parseISODate(t.end_date);
+      return startObj && endObj && endObj >= startObj ? [{
+        key: 'overall', label: '總覽', className: 'overall', start: t.start_date, end: t.end_date, startObj, endObj
+      }] : [];
+    }
+
+    function renderGantt() {
+      const gantt = document.getElementById('gantt');
+      const mode = ganttModeEl.value;
+      const rowsWithSegments = tasks.map(t => ({ ...t, segments: segmentsForTask(t, mode) })).filter(t => t.segments.length);
+
+      if (!rowsWithSegments.length) {
+        gantt.innerHTML = '<div class="empty">尚無可繪製甘特圖的資料，請先填寫各 Team 的 start / end。</div>';
+        return;
+      }
+
+      const allSegments = rowsWithSegments.flatMap(t => t.segments);
+      const minStart = new Date(Math.min(...allSegments.map(s => s.startObj.getTime())));
+      const maxEnd = new Date(Math.max(...allSegments.map(s => s.endObj.getTime())));
+      const totalDays = diffDaysInclusive(minStart, maxEnd);
+      gantt.style.setProperty('--days', String(totalDays));
+
+      const ticks = [];
+      const months = [];
+      for (let i = 0; i < totalDays; i++) {
+        const d = addDays(minStart, i);
+        if (i === 0 || d.getDay() === 1) {
+          ticks.push(`<span class="tick" style="left: calc(${i} * var(--dayw));">${formatShortDate(d)}</span>`);
+        }
+        if (i === 0 || d.getDate() === 1) {
+          months.push(`<span class="month-tick" style="left: calc(${i} * var(--dayw));">${d.getFullYear()}/${d.getMonth() + 1}</span>`);
+        }
+      }
+
+      const rows = rowsWithSegments.map(t => {
+        const rowHeight = Math.max(20, t.segments.length * 12 + 5);
+        const bars = t.segments.map((s, idx) => {
+          const left = diffDaysInclusive(minStart, s.startObj) - 1;
+          const width = diffDaysInclusive(s.startObj, s.endObj);
+          const lead = calcLead(s.start, s.end).text;
+          return `
+            <div class="bar ${s.className} ${t.is_section ? 'section' : ''}" style="top: ${4 + idx * 12}px; left: calc(${left} * var(--dayw)); width: calc(${width} * var(--dayw));" title="${escapeHtml(s.label)}：${escapeHtml(s.start)} ~ ${escapeHtml(s.end)}">
+              <span>${escapeHtml(s.label)} ${escapeHtml(lead)}天</span>
+            </div>
+          `;
+        }).join('');
+        const noteTitle = t.notes ? `｜備註：${t.notes}` : '';
+        return `
+          <div class="gantt-row ${t.is_section ? 'section' : ''} ${t.is_closed ? 'closed' : ''}">
+            <div class="gantt-label" title="${escapeHtml(t.item + noteTitle)}">${t.is_closed ? '✓ ' : ''}${escapeHtml(t.item)}</div>
+            <div class="timeline" style="height:${rowHeight}px;">${bars}</div>
+          </div>
+        `;
+      }).join('');
+
+      gantt.innerHTML = `
+        <div class="gantt-head">
+          <div class="gantt-label">項目</div>
+          <div class="scale">${ticks.join('')}${months.join('')}</div>
+        </div>
+        ${rows}
+      `;
+    }
+
+    function renderAll() {
+      tasks = sortTasks(tasks);
+      renderTable();
+      renderGantt();
+    }
+
+    function getTask(id) {
+      return tasks.find(t => t.id === id);
+    }
+
+    function createBlankTask(seq, item = '新增項目') {
+      return normalizeTask({
+        id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        seq,
+        item,
+        is_section: false,
+        is_closed: false,
+        pm_fae: false,
+        owner_system: false,
+        owner_data: false,
+        owner_model: false,
+        notes: ''
+      }, seq);
+    }
+
+    function resequence() {
+      tasks.forEach((t, idx) => { t.seq = idx; });
+    }
+
+    function refreshOverallDates() {
+      tasks.forEach(t => {
+        const overall = getOverallRange(t);
+        t.start_date = overall.start || '';
+        t.end_date = overall.end || '';
+      });
+    }
+
+    function clearTaskData(task) {
+      task.is_closed = false;
+      task.pm_fae = false;
+      task.owner_system = false;
+      task.owner_data = false;
+      task.owner_model = false;
+      task.start_date = '';
+      task.end_date = '';
+      TEAM_DEFS.forEach(team => {
+        task[team.startField] = '';
+        task[team.endField] = '';
+      });
+      task.notes = '';
+    }
+
+    function clearPayloadForDb(task) {
+      return {
+        id: task.id,
+        seq: task.seq,
+        item: task.item,
+        is_section: task.is_section,
+        is_closed: false,
+        pm_fae: false,
+        owner_system: false,
+        owner_data: false,
+        owner_model: false,
+        start_date: null,
+        end_date: null,
+        pm_fae_start_date: null,
+        pm_fae_end_date: null,
+        system_start_date: null,
+        system_end_date: null,
+        data_start_date: null,
+        data_end_date: null,
+        model_start_date: null,
+        model_end_date: null,
+        notes: ''
+      };
+    }
+
+    function localSave() {
+      refreshOverallDates();
+      localStorage.setItem(storageKey, JSON.stringify(tasks));
+      localStorage.setItem(modeKey, calcModeEl.value);
+      localStorage.setItem(ganttModeKey, ganttModeEl.value);
+      setStatus('已儲存在此瀏覽器 localStorage', 'warn');
+    }
+
+    function taskPayloadForDb(t, idx = 0) {
+      const normalized = normalizeTask(t, idx);
+      const overall = getOverallRange(normalized);
+      return {
+        id: normalized.id,
+        seq: normalized.seq,
+        item: normalized.item,
+        is_section: normalized.is_section,
+        is_closed: normalized.is_closed,
+        pm_fae: normalized.pm_fae,
+        owner_system: normalized.owner_system,
+        owner_data: normalized.owner_data,
+        owner_model: normalized.owner_model,
+        start_date: dateForDb(overall.start),
+        end_date: dateForDb(overall.end),
+        pm_fae_start_date: dateForDb(normalized.pm_fae_start_date),
+        pm_fae_end_date: dateForDb(normalized.pm_fae_end_date),
+        system_start_date: dateForDb(normalized.system_start_date),
+        system_end_date: dateForDb(normalized.system_end_date),
+        data_start_date: dateForDb(normalized.data_start_date),
+        data_end_date: dateForDb(normalized.data_end_date),
+        model_start_date: dateForDb(normalized.model_start_date),
+        model_end_date: dateForDb(normalized.model_end_date),
+        notes: normalized.notes || ''
+      };
+    }
+
+    async function remoteSaveAll() {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      if (!isRemoteMode) { localSave(); return; }
+      try {
+        markLocalEditing();
+        refreshOverallDates();
+        const payload = tasks.map(taskPayloadForDb);
+        const { error } = await db.from(TABLE).upsert(payload, { onConflict: 'id' });
+        if (error) throw error;
+        setStatus('雲端已同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setStatus(`雲端儲存失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    async function remoteClearTask(task) {
+      if (!isRemoteMode) { localSave(); return; }
+      try {
+        if (saveTimer) {
+          clearTimeout(saveTimer);
+          saveTimer = null;
+        }
+        markLocalEditing(2500);
+        const { error } = await db.from(TABLE).upsert(clearPayloadForDb(task), { onConflict: 'id' });
+        if (error) throw error;
+        setStatus('此列資料已清除並同步到雲端', 'ok');
+      } catch (err) {
+        console.error(err);
+        setStatus(`清除失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    function scheduleSave() {
+      markLocalEditing();
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => remoteSaveAll(), 350);
+    }
+
+    async function loadLocal() {
+      const savedMode = localStorage.getItem(modeKey);
+      if (savedMode) calcModeEl.value = savedMode;
+      const savedGanttMode = localStorage.getItem(ganttModeKey);
+      if (savedGanttMode) ganttModeEl.value = savedGanttMode;
+      const raw = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
+      tasks = raw ? sortTasks(JSON.parse(raw)) : cloneDefaults();
+      isRemoteMode = false;
+      setStatus('localStorage 模式：只能自己看到自己的修改', 'warn');
+      renderAll();
+    }
+
+    async function loadRemote() {
+      db = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+      isRemoteMode = true;
+      const savedMode = localStorage.getItem(modeKey);
+      if (savedMode) calcModeEl.value = savedMode;
+      const savedGanttMode = localStorage.getItem(ganttModeKey);
+      if (savedGanttMode) ganttModeEl.value = savedGanttMode;
+
+      const { data, error } = await db.from(TABLE).select('*').order('seq', { ascending: true });
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        tasks = cloneDefaults();
+        await remoteSaveAll();
+      } else {
+        tasks = sortTasks(data);
+      }
+      setStatus('雲端共編模式：已連線', 'ok');
+      renderAll();
+      subscribeRemote();
+    }
+
+    function subscribeRemote() {
+      if (!isRemoteMode || channel) return;
+      channel = db
+        .channel('project_tasks_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, async () => {
+          if (Date.now() < ignoreRemoteUntil) return;
+          const { data, error } = await db.from(TABLE).select('*').order('seq', { ascending: true });
+          if (!error && data) {
+            tasks = sortTasks(data);
+            renderAll();
+            setStatus('收到其他人更新，畫面已同步', 'ok');
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') setStatus('雲端共編模式：即時同步中', 'ok');
+        });
+    }
+
+    tbody.addEventListener('change', (e) => {
+      const tr = e.target.closest('tr[data-id]');
+      if (!tr) return;
+      const task = getTask(tr.dataset.id);
+      if (!task) return;
+      const field = e.target.dataset.field;
+      if (!field) return;
+      task[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+      refreshOverallDates();
+      renderAll();
+      scheduleSave();
+    });
+
+    tbody.addEventListener('blur', (e) => {
+      const tr = e.target.closest('tr[data-id]');
+      if (!tr) return;
+      const task = getTask(tr.dataset.id);
+      const field = e.target.dataset.field;
+      if (!task || !['item', 'notes'].includes(field)) return;
+      task[field] = e.target.value;
+      refreshOverallDates();
+      renderAll();
+      scheduleSave();
+    }, true);
+
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const tr = btn.closest('tr[data-id]');
+      const task = getTask(tr.dataset.id);
+      if (!task) return;
+
+      if (btn.dataset.action === 'insert-after') {
+        const idx = tasks.findIndex(t => t.id === task.id);
+        tasks.splice(idx + 1, 0, createBlankTask(idx + 1));
+        resequence();
+        renderAll();
+        scheduleSave();
+        return;
+      }
+
+      if (btn.dataset.action === 'clear') {
+        if (!confirm(`確定清除「${task.item}」這一列的負責、日期與備註？`)) return;
+        clearTaskData(task);
+        refreshOverallDates();
+        renderAll();
+        remoteClearTask(task);
+        return;
+      }
+
+      if (btn.dataset.action === 'delete') {
+        if (!confirm(`確定刪除「${task.item}」？`)) return;
+        tasks = tasks.filter(t => t.id !== task.id);
+        resequence();
+        renderAll();
+        if (isRemoteMode) {
+          db.from(TABLE).delete().eq('id', task.id).then(({ error }) => {
+            if (error) {
+              console.error(error);
+              setStatus(`刪除失敗：${error.message || error}`, 'err');
+            } else {
+              remoteSaveAll();
+            }
+          });
+        } else {
+          scheduleSave();
+        }
+        return;
+      }
+
+      if (btn.dataset.action === 'toggle-section') {
+        task.is_section = !task.is_section;
+        renderAll();
+        scheduleSave();
+      }
+    });
+
+    document.getElementById('addRowBtn').addEventListener('click', () => {
+      const next = tasks.length;
+      tasks.push(createBlankTask(next));
+      renderAll();
+      scheduleSave();
+    });
+
+    document.getElementById('saveNowBtn').addEventListener('click', () => remoteSaveAll());
+
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      if (!confirm('確定要重置為圖片範例？這會覆蓋目前任務內容。')) return;
+      tasks = cloneDefaults();
+      renderAll();
+      if (isRemoteMode) {
+        try {
+          await db.from(TABLE).delete().neq('id', '__never__');
+          await remoteSaveAll();
+        } catch (err) {
+          console.error(err);
+          setStatus(`重置失敗：${err.message || err}`, 'err');
+        }
+      } else {
+        localSave();
+      }
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      const rows = [[
+        '項目','結案',
+        'PM/FAE_負責','PM/FAE_start','PM/FAE_end','PM/FAE_LT',
+        'SYSTEM_負責','SYSTEM_start','SYSTEM_end','SYSTEM_LT',
+        'DATA_負責','DATA_start','DATA_end','DATA_LT',
+        'MODEL_負責','MODEL_start','MODEL_end','MODEL_LT',
+        '總_start','總_end','總_LT','備註'
+      ]];
+      tasks.forEach(t => {
+        const overall = getOverallRange(t);
+        const row = [t.item, t.is_closed ? 'Y' : ''];
+        TEAM_DEFS.forEach(team => {
+          row.push(
+            t[team.ownerField] ? 'v' : '',
+            t[team.startField] || '',
+            t[team.endField] || '',
+            calcLead(t[team.startField], t[team.endField]).text
+          );
+        });
+        row.push(overall.start || '', overall.end || '', calcLead(overall.start, overall.end).text, t.notes || '');
+        rows.push(row);
+      });
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'project_gantt_team_dates.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    calcModeEl.addEventListener('change', () => {
+      localStorage.setItem(modeKey, calcModeEl.value);
+      renderAll();
+      scheduleSave();
+    });
+
+    ganttModeEl.addEventListener('change', () => {
+      localStorage.setItem(ganttModeKey, ganttModeEl.value);
+      renderGantt();
+    });
+
+    (async function init() {
+      try {
+        if (hasSupabaseConfig) {
+          await loadRemote();
+        } else {
+          await loadLocal();
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(`雲端連線失敗，已改用 localStorage：${err.message || err}`, 'err');
+        await loadLocal();
+      }
+    })();
+  </script>
+</body>
+</html>

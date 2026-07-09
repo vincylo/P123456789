@@ -1,0 +1,5 @@
+window.PROJECT_GANTT_CONFIG = {
+  SUPABASE_URL: "https://YOUR_PROJECT_ID.supabase.co",
+  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_PUBLIC_KEY",
+  TABLE_NAME: "project_tasks"
+};
