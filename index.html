@@ -389,7 +389,6 @@
       <button class="primary" id="addRowBtn">新增列</button>
       <button id="exportCsvBtn">匯出 CSV</button>
       <button id="saveNowBtn">立即儲存</button>
-      <button class="danger" id="resetBtn">重置為圖片範例</button>
       <label class="hint">Lead Time：</label>
       <select id="calcMode">
         <option value="business" selected>工作天，含起迄日，不含六日</option>
@@ -406,12 +405,11 @@
         <div class="gantt-controls">
           <label class="hint">顯示：</label>
           <select id="ganttMode">
-            <option value="all" selected>全部 Team 分色</option>
-            <option value="overall">總覽</option>
-            <option value="pm_fae">PM/FAE</option>
-            <option value="system">SYSTEM</option>
-            <option value="data">DATA</option>
-            <option value="model">MODEL</option>
+            <option value="overall" selected>總時程（不分 Team）</option>
+            <option value="pm_fae">主責：PM/FAE</option>
+            <option value="system">主責：SYSTEM</option>
+            <option value="data">主責：DATA</option>
+            <option value="model">主責：MODEL</option>
           </select>
           <span class="legend">
             <span class="legend-item"><i class="legend-dot pm"></i>PM/FAE</span>
@@ -460,7 +458,7 @@
 
     <p class="footer-note">
       共編保存方式：若 config.js 已設定 Supabase，資料會儲存在雲端資料庫並即時同步給其他開啟此網頁的人；若未設定，資料只會存在目前瀏覽器的 localStorage。<br>
-      v7 更新：甘特圖與表格視窗改得更扁；每列新增結案勾選，勾選後表格與甘特圖會以灰色顯示。
+      v8 更新：甘特圖可依 4 個主責 Team 篩選，或顯示不分 Team 的總時程；篩選只影響畫面，不會修改任務資料。
     </p>
   </main>
 
@@ -506,7 +504,8 @@
     const storageKey = 'project_gantt_tasks_v2';
     const legacyStorageKey = 'project_gantt_tasks_v1';
     const modeKey = 'project_gantt_calc_mode_v1';
-    const ganttModeKey = 'project_gantt_view_mode_v2';
+    const ganttModeKey = 'project_gantt_view_mode_v3';
+    const validGanttModes = new Set(['overall', ...TEAM_DEFS.map(team => team.key)]);
 
     let db = null;
     let tasks = [];
@@ -699,7 +698,7 @@
     }
 
     function segmentsForTask(t, mode) {
-      const teams = getTeamSegments(t).filter(s => s.valid);
+      const teams = getTeamSegments(t).filter(s => s.valid && s.checked);
       if (mode === 'overall') {
         const overall = getOverallRange(t);
         const startObj = parseISODate(overall.start);
@@ -708,13 +707,7 @@
           key: 'overall', label: '總覽', className: 'overall', start: overall.start, end: overall.end, startObj, endObj
         }] : [];
       }
-      if (mode !== 'all') return teams.filter(s => s.key === mode);
-      if (teams.length) return teams;
-      const startObj = parseISODate(t.start_date);
-      const endObj = parseISODate(t.end_date);
-      return startObj && endObj && endObj >= startObj ? [{
-        key: 'overall', label: '總覽', className: 'overall', start: t.start_date, end: t.end_date, startObj, endObj
-      }] : [];
+      return teams.filter(s => s.key === mode);
     }
 
     function renderGantt() {
@@ -933,7 +926,7 @@
       const savedMode = localStorage.getItem(modeKey);
       if (savedMode) calcModeEl.value = savedMode;
       const savedGanttMode = localStorage.getItem(ganttModeKey);
-      if (savedGanttMode) ganttModeEl.value = savedGanttMode;
+      ganttModeEl.value = validGanttModes.has(savedGanttMode) ? savedGanttMode : 'overall';
       const raw = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
       tasks = raw ? sortTasks(JSON.parse(raw)) : cloneDefaults();
       isRemoteMode = false;
@@ -947,7 +940,7 @@
       const savedMode = localStorage.getItem(modeKey);
       if (savedMode) calcModeEl.value = savedMode;
       const savedGanttMode = localStorage.getItem(ganttModeKey);
-      if (savedGanttMode) ganttModeEl.value = savedGanttMode;
+      ganttModeEl.value = validGanttModes.has(savedGanttMode) ? savedGanttMode : 'overall';
 
       const { data, error } = await db.from(TABLE).select('*').order('seq', { ascending: true });
       if (error) throw error;
@@ -1066,23 +1059,6 @@
     });
 
     document.getElementById('saveNowBtn').addEventListener('click', () => remoteSaveAll());
-
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-      if (!confirm('確定要重置為圖片範例？這會覆蓋目前任務內容。')) return;
-      tasks = cloneDefaults();
-      renderAll();
-      if (isRemoteMode) {
-        try {
-          await db.from(TABLE).delete().neq('id', '__never__');
-          await remoteSaveAll();
-        } catch (err) {
-          console.error(err);
-          setStatus(`重置失敗：${err.message || err}`, 'err');
-        }
-      } else {
-        localSave();
-      }
-    });
 
     document.getElementById('exportCsvBtn').addEventListener('click', () => {
       const rows = [[
