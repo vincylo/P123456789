@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>專案時程共編甘特圖</title>
+  <title>uO-PTI P8</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
   <script src="./config.js"></script>
   <style>
     :root {
@@ -374,31 +376,414 @@
       margin: 8px 4px 0;
     }
 
+
+
+    /* 月曆與留言板 */
+    .collab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .calendar-shell {
+      min-width: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    #calendar { min-height: 520px; }
+
+    .calendar-side,
+    .message-compose {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfcff;
+    }
+
+    .calendar-side h3,
+    .message-compose h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .form-field.full { grid-column: 1 / -1; }
+
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      background: #fff;
+      color: var(--text);
+      padding: 6px 7px;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .form-field input[type="date"] {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+    }
+
+    .form-field textarea {
+      min-height: 68px;
+      resize: vertical;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .sub-status {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .sub-status.ok { color: var(--ok); }
+    .sub-status.err { color: var(--danger); }
+
+    .reminder-list,
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      overflow: auto;
+    }
+
+    .reminder-list {
+      max-height: 250px;
+      margin-top: 10px;
+    }
+
+    .reminder-item,
+    .message-item {
+      border: 1px solid #dbe4f0;
+      background: #fff;
+      border-radius: 9px;
+      padding: 8px;
+    }
+
+    .reminder-head,
+    .message-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .reminder-title,
+    .message-author {
+      font-weight: 700;
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+    .reminder-date,
+    .message-time {
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .reminder-note,
+    .message-text {
+      margin-top: 5px;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+
+    .message-layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .message-list {
+      max-height: 330px;
+      min-height: 150px;
+    }
+
+    .calendar-legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .calendar-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .calendar-key i {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .calendar-key .task-key { background: #1f4e8c; }
+    .calendar-key .reminder-key { background: #b45309; }
+
+    .fc { font-size: 12px; }
+    .fc .fc-toolbar-title { font-size: 17px; }
+    .fc .fc-button { padding: .35em .62em; font-size: 12px; }
+    .fc .fc-daygrid-day-number { font-size: 11px; }
+    .fc .fc-event { cursor: pointer; }
+    .fc .calendar-task-event { background: #1f4e8c; border-color: #1f4e8c; }
+    .fc .calendar-task-event.closed-event { background: #9ca3af; border-color: #9ca3af; opacity: .72; }
+    .fc .calendar-section-event { background: #64748b; border-color: #64748b; }
+    .fc .calendar-reminder-event { background: #b45309; border-color: #b45309; }
+
+    @media (max-width: 980px) {
+      .collab-grid,
+      .message-layout { grid-template-columns: 1fr; }
+      .calendar-side { order: -1; }
+      #calendar { min-height: 460px; }
+    }
+
     @media (max-width: 760px) {
       header, main { padding-left: 12px; padding-right: 12px; }
       .status { margin-left: 0; width: 100%; }
       .gantt-head, .gantt-row { grid-template-columns: 240px 1fr; }
       .gantt-label { font-size: 12px; }
     }
+
+
+    /* v11：uO-PTI P8、表格式留言板、月曆起訖點 */
+    .header-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-line .status { margin-left: auto; }
+
+    .panel-title-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .comment-table-wrap {
+      overflow: auto;
+      max-height: 310px;
+      min-height: 130px;
+      padding: 8px;
+    }
+
+    #commentTable {
+      width: 100%;
+      min-width: 920px;
+      zoom: 1;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+
+    #commentTable th,
+    #commentTable td {
+      border: 1px solid #94a3b8;
+      padding: 4px;
+      vertical-align: top;
+    }
+
+    #commentTable thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #d6e1f4;
+      font-size: 12px;
+    }
+
+    #commentTable .comment-author-col { width: 120px; }
+    #commentTable .comment-target-col { width: 120px; }
+    #commentTable .comment-content-col { width: 34%; }
+    #commentTable .comment-reply-col { width: 34%; }
+    #commentTable .comment-action-col { width: 60px; text-align: center; }
+
+    #commentTable select,
+    #commentTable textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      background: #fff;
+      color: var(--text);
+      padding: 5px 6px;
+      font: inherit;
+    }
+
+    #commentTable textarea {
+      min-height: 54px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .calendar-side .form-row { grid-template-columns: 1fr; }
+    .calendar-side .form-field textarea { min-height: 82px; }
+
+    .calendar-legend .pm-key { background: var(--bar-pm); }
+    .calendar-legend .system-key { background: var(--bar-system); }
+    .calendar-legend .data-key { background: var(--bar-data); }
+    .calendar-legend .model-key { background: var(--bar-model); }
+
+    .fc { font-size: 11px; }
+    .fc .fc-toolbar-title { font-size: 17px; }
+    .fc .fc-daygrid-day-number { font-size: 10px; }
+    .fc .fc-col-header-cell-cushion { font-size: 10px; }
+    .fc .fc-daygrid-event {
+      margin-top: 1px;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+    .fc .fc-event-main,
+    .fc .fc-event-title,
+    .fc .fc-event-title-container {
+      font-size: 9px;
+      line-height: 1.15;
+      font-weight: 400;
+    }
+    .fc .calendar-pm { background: var(--bar-pm); border-color: var(--bar-pm); }
+    .fc .calendar-system { background: var(--bar-system); border-color: var(--bar-system); }
+    .fc .calendar-data { background: var(--bar-data); border-color: var(--bar-data); }
+    .fc .calendar-model { background: var(--bar-model); border-color: var(--bar-model); }
+    .fc .calendar-end-event { filter: brightness(.88); }
+    .fc .calendar-reminder-event { background: #b45309; border-color: #b45309; font-weight: 700; }
+
+
+    /* v12：日曆格內直接新增提醒 */
+    .collab-grid { display: block; padding: 10px; }
+    .calendar-shell { width: 100%; }
+    .calendar-side { display: none; }
+    .fc .fc-daygrid-day-frame {
+      min-height: 116px;
+      padding-bottom: 28px;
+    }
+    .fc .fc-daygrid-event {
+      font-size: 9px;
+      line-height: 1.18;
+      margin-top: 1px;
+    }
+    .calendar-inline-add {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      bottom: 3px;
+      z-index: 4;
+    }
+    .calendar-inline-add input {
+      display: block;
+      width: 100%;
+      height: 22px;
+      box-sizing: border-box;
+      border: 1px solid #cbd5e1;
+      border-radius: 3px;
+      background: rgba(255,255,255,.96);
+      padding: 2px 5px;
+      color: var(--text);
+      font-size: 10px;
+      outline: none;
+    }
+    .calendar-inline-add input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,.16);
+    }
+
+    .wbs-hint {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
   </style>
 </head>
 <body>
   <header>
-    <h1>專案時程共編甘特圖</h1>
-    <div class="toolbar">
-      <button class="primary" id="addRowBtn">新增列</button>
-      <button id="exportCsvBtn">匯出 CSV</button>
-      <button id="saveNowBtn">立即儲存</button>
-      <label class="hint">Lead Time：</label>
-      <select id="calcMode">
-        <option value="business" selected>工作天，含起迄日，不含六日</option>
-        <option value="calendar">日曆天，含起迄日</option>
-      </select>
+    <div class="header-line">
+      <h1>uO-PTI P8</h1>
       <span id="status" class="status warn">初始化中...</span>
     </div>
   </header>
 
   <main>
+    <section class="panel">
+      <div class="panel-title">
+        <h2>留言板</h2>
+        <div class="panel-title-actions">
+          <button class="primary" id="addCommentRowBtn">新增留言</button>
+          <span id="commentStatus" class="sub-status"></span>
+        </div>
+      </div>
+      <div class="comment-table-wrap">
+        <table id="commentTable">
+          <thead>
+            <tr>
+              <th class="comment-author-col">留言人</th>
+              <th class="comment-target-col">對象</th>
+              <th class="comment-content-col">內容</th>
+              <th class="comment-reply-col">回覆</th>
+              <th class="comment-action-col">操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>日曆</h2>
+        <div class="calendar-legend">
+          <span class="calendar-key"><i class="pm-key"></i>PM/FAE</span>
+          <span class="calendar-key"><i class="system-key"></i>SYSTEM</span>
+          <span class="calendar-key"><i class="data-key"></i>DATA</span>
+          <span class="calendar-key"><i class="model-key"></i>MODEL</span>
+          <span class="calendar-key"><i class="reminder-key"></i>自由提醒</span>
+          <span class="hint">WBS 僅標記 start／end；每個日期格下方可直接新增項目。</span>
+          <span id="reminderStatus" class="sub-status"></span>
+        </div>
+      </div>
+      <div class="collab-grid">
+        <div class="calendar-shell">
+          <div id="calendar"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-title">
         <h2>甘特圖</h2>
@@ -427,8 +812,11 @@
 
     <section class="panel">
       <div class="panel-title">
-        <h2>任務表</h2>
-        <span class="hint">表格標題列與左側項目欄已凍結；可勾選結案，結案列會變灰。</span>
+        <h2>WBS</h2>
+        <div class="panel-title-actions">
+          <span class="wbs-hint">LT 固定以工作天計算（含起迄日，不含週六、週日）</span>
+          <button class="primary" id="addRowBtn">新增列</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="taskTable">
@@ -440,7 +828,7 @@
               <th colspan="4">SYSTEM</th>
               <th colspan="4">DATA</th>
               <th colspan="4">MODEL</th>
-              <th rowspan="2">總 Lead<br>Time</th>
+              <th rowspan="2">總 LT<br>工作天</th>
               <th rowspan="2">備註</th>
               <th rowspan="2">操作</th>
             </tr>
@@ -457,8 +845,8 @@
     </section>
 
     <p class="footer-note">
-      共編保存方式：若 config.js 已設定 Supabase，資料會儲存在雲端資料庫並即時同步給其他開啟此網頁的人；若未設定，資料只會存在目前瀏覽器的 localStorage。<br>
-      v8 更新：甘特圖可依 4 個主責 Team 篩選，或顯示不分 Team 的總時程；篩選只影響畫面，不會修改任務資料。
+      共編保存方式：若 config.js 已設定 Supabase，WBS、留言與提醒會儲存在雲端並即時同步；若未設定，資料只會保存在目前瀏覽器的 localStorage。<br>
+      v12 更新：日曆同項目固定 start 在上、end 在下；每個日期格可直接輸入「新增項目」，按 Enter 同步。
     </p>
   </main>
 
@@ -469,6 +857,9 @@
       { key: 'data', label: 'DATA', ownerField: 'owner_data', startField: 'data_start_date', endField: 'data_end_date', className: 'data' },
       { key: 'model', label: 'MODEL', ownerField: 'owner_model', startField: 'model_start_date', endField: 'model_end_date', className: 'model' }
     ];
+
+    const COMMENT_AUTHORS = ['PM/FAE', 'SYSTEM', 'DATA', 'MODEL'];
+    const COMMENT_TARGETS = ['ALL', ...COMMENT_AUTHORS];
 
     const DEFAULT_TASKS = [
       { id: 'sec-0', seq: 0, item: '0. 專案前置', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '' },
@@ -501,9 +892,12 @@
     const cfg = window.PROJECT_GANTT_CONFIG || {};
     const hasSupabaseConfig = Boolean(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase);
     const TABLE = cfg.TABLE_NAME || 'project_tasks';
+    const COMMENTS_TABLE = cfg.COMMENTS_TABLE_NAME || 'project_comments';
+    const REMINDERS_TABLE = cfg.REMINDERS_TABLE_NAME || 'project_reminders';
     const storageKey = 'project_gantt_tasks_v2';
+    const commentsStorageKey = 'project_gantt_comments_v1';
+    const remindersStorageKey = 'project_gantt_reminders_v1';
     const legacyStorageKey = 'project_gantt_tasks_v1';
-    const modeKey = 'project_gantt_calc_mode_v1';
     const ganttModeKey = 'project_gantt_view_mode_v3';
     const validGanttModes = new Set(['overall', ...TEAM_DEFS.map(team => team.key)]);
 
@@ -512,12 +906,21 @@
     let saveTimer = null;
     let isRemoteMode = false;
     let channel = null;
+    let commentChannel = null;
+    let reminderChannel = null;
     let ignoreRemoteUntil = 0;
+    let ignoreCommentRemoteUntil = 0;
+    let comments = [];
+    let reminders = [];
+    let calendar = null;
 
     const tbody = document.querySelector('#taskTable tbody');
     const statusEl = document.getElementById('status');
-    const calcModeEl = document.getElementById('calcMode');
     const ganttModeEl = document.getElementById('ganttMode');
+    const commentTbody = document.querySelector('#commentTable tbody');
+    const commentStatusEl = document.getElementById('commentStatus');
+    const reminderListEl = document.getElementById('reminderList');
+    const reminderStatusEl = document.getElementById('reminderStatus');
 
     function setStatus(text, type = 'warn') {
       statusEl.textContent = text;
@@ -598,8 +1001,6 @@
       const end = parseISODate(endValue);
       if (!start || !end) return { text: '', invalid: false };
       if (end < start) return { text: '日期錯誤', invalid: true };
-      const mode = calcModeEl.value;
-      if (mode === 'calendar') return { text: String(diffDaysInclusive(start, end)), invalid: false };
       let count = 0;
       for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
         const day = d.getDay();
@@ -772,6 +1173,7 @@
       tasks = sortTasks(tasks);
       renderTable();
       renderGantt();
+      renderCalendar();
     }
 
     function getTask(id) {
@@ -848,7 +1250,6 @@
     function localSave() {
       refreshOverallDates();
       localStorage.setItem(storageKey, JSON.stringify(tasks));
-      localStorage.setItem(modeKey, calcModeEl.value);
       localStorage.setItem(ganttModeKey, ganttModeEl.value);
       setStatus('已儲存在此瀏覽器 localStorage', 'warn');
     }
@@ -923,22 +1324,21 @@
     }
 
     async function loadLocal() {
-      const savedMode = localStorage.getItem(modeKey);
-      if (savedMode) calcModeEl.value = savedMode;
       const savedGanttMode = localStorage.getItem(ganttModeKey);
       ganttModeEl.value = validGanttModes.has(savedGanttMode) ? savedGanttMode : 'overall';
       const raw = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
       tasks = raw ? sortTasks(JSON.parse(raw)) : cloneDefaults();
       isRemoteMode = false;
+      loadCollaborationLocal();
       setStatus('localStorage 模式：只能自己看到自己的修改', 'warn');
       renderAll();
+      renderComments();
+      renderReminders();
     }
 
     async function loadRemote() {
       db = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
       isRemoteMode = true;
-      const savedMode = localStorage.getItem(modeKey);
-      if (savedMode) calcModeEl.value = savedMode;
       const savedGanttMode = localStorage.getItem(ganttModeKey);
       ganttModeEl.value = validGanttModes.has(savedGanttMode) ? savedGanttMode : 'overall';
 
@@ -951,9 +1351,14 @@
       } else {
         tasks = sortTasks(data);
       }
+      await loadCommentsRemote();
+      await loadRemindersRemote();
       setStatus('雲端共編模式：已連線', 'ok');
       renderAll();
+      renderComments();
+      renderReminders();
       subscribeRemote();
+      subscribeCollaborationRemote();
     }
 
     function subscribeRemote() {
@@ -973,6 +1378,616 @@
           if (status === 'SUBSCRIBED') setStatus('雲端共編模式：即時同步中', 'ok');
         });
     }
+
+
+    function setSubStatus(el, text, type = '') {
+      if (!el) return;
+      el.textContent = text;
+      el.className = `sub-status ${type}`.trim();
+    }
+
+    function safeUuid() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+      return `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function normalizeComment(c) {
+      const author = COMMENT_AUTHORS.includes(String(c.author || '')) ? String(c.author) : 'PM/FAE';
+      const audience = COMMENT_TARGETS.includes(String(c.audience || '')) ? String(c.audience) : 'ALL';
+      return {
+        id: String(c.id || safeUuid()),
+        author,
+        audience,
+        message: String(c.message || ''),
+        reply: String(c.reply || ''),
+        created_at: c.created_at || new Date().toISOString(),
+        updated_at: c.updated_at || c.created_at || new Date().toISOString()
+      };
+    }
+
+    function normalizeReminder(r) {
+      return {
+        id: String(r.id || safeUuid()),
+        title: String(r.title || ''),
+        reminder_date: cleanDate(r.reminder_date),
+        end_date: cleanDate(r.end_date),
+        notes: String(r.notes || ''),
+        created_at: r.created_at || new Date().toISOString(),
+        updated_at: r.updated_at || r.created_at || new Date().toISOString()
+      };
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString('zh-TW', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+    }
+
+    function loadCollaborationLocal() {
+      try {
+        const rawComments = localStorage.getItem(commentsStorageKey);
+        const rawReminders = localStorage.getItem(remindersStorageKey);
+        comments = rawComments ? JSON.parse(rawComments).map(normalizeComment) : [];
+        reminders = rawReminders ? JSON.parse(rawReminders).map(normalizeReminder) : [];
+      } catch (err) {
+        console.error(err);
+        comments = [];
+        reminders = [];
+      }
+    }
+
+    function saveCommentsLocal() {
+      localStorage.setItem(commentsStorageKey, JSON.stringify(comments));
+      renderComments();
+      setSubStatus(commentStatusEl, '已儲存在此瀏覽器', 'ok');
+    }
+
+    function saveRemindersLocal() {
+      localStorage.setItem(remindersStorageKey, JSON.stringify(reminders));
+      renderReminders();
+      renderCalendar();
+      setSubStatus(reminderStatusEl, '已儲存在此瀏覽器', 'ok');
+    }
+
+    async function loadCommentsRemote() {
+      if (!isRemoteMode) return;
+      try {
+        const { data, error } = await db
+          .from(COMMENTS_TABLE)
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        if (error) throw error;
+        comments = (data || []).map(normalizeComment);
+        setSubStatus(commentStatusEl, '雲端同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(commentStatusEl, '請先執行 v11 SQL', 'err');
+      }
+    }
+
+    async function loadRemindersRemote() {
+      if (!isRemoteMode) return;
+      try {
+        const { data, error } = await db
+          .from(REMINDERS_TABLE)
+          .select('*')
+          .order('reminder_date', { ascending: true })
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        reminders = (data || []).map(normalizeReminder);
+        setSubStatus(reminderStatusEl, '雲端同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(reminderStatusEl, '請先執行 v11 SQL', 'err');
+      }
+    }
+
+    function commentSelectOptions(values, selected) {
+      return values.map(value => `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('');
+    }
+
+    function renderComments() {
+      if (!commentTbody) return;
+      const sorted = [...comments].sort((a, b) =>
+        String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id))
+      );
+      if (!sorted.length) {
+        commentTbody.innerHTML = '<tr><td colspan="5" class="empty">目前沒有留言，請按「新增留言」。</td></tr>';
+        return;
+      }
+      commentTbody.innerHTML = sorted.map(c => `
+        <tr data-comment-id="${escapeHtml(c.id)}">
+          <td><select data-comment-field="author">${commentSelectOptions(COMMENT_AUTHORS, c.author)}</select></td>
+          <td><select data-comment-field="audience">${commentSelectOptions(COMMENT_TARGETS, c.audience)}</select></td>
+          <td><textarea data-comment-field="message" maxlength="3000" placeholder="自由填寫留言內容">${escapeHtml(c.message)}</textarea></td>
+          <td><textarea data-comment-field="reply" maxlength="3000" placeholder="自由填寫回覆">${escapeHtml(c.reply)}</textarea></td>
+          <td class="comment-action-col"><button class="mini-btn danger" type="button" data-comment-action="delete">刪除</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function createBlankComment() {
+      return normalizeComment({
+        id: safeUuid(),
+        author: 'PM/FAE',
+        audience: 'ALL',
+        message: '',
+        reply: ''
+      });
+    }
+
+    async function saveComment(comment) {
+      comment.updated_at = new Date().toISOString();
+      ignoreCommentRemoteUntil = Date.now() + 1600;
+      if (!isRemoteMode) {
+        saveCommentsLocal();
+        return;
+      }
+      try {
+        setSubStatus(commentStatusEl, '儲存中...');
+        const payload = {
+          id: comment.id,
+          author: comment.author,
+          audience: comment.audience,
+          message: comment.message,
+          reply: comment.reply
+        };
+        const { error } = await db.from(COMMENTS_TABLE).upsert(payload, { onConflict: 'id' });
+        if (error) throw error;
+        setSubStatus(commentStatusEl, '留言已同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(commentStatusEl, `留言儲存失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    async function addCommentRow() {
+      const comment = createBlankComment();
+      comments.push(comment);
+      renderComments();
+      await saveComment(comment);
+      const row = commentTbody.querySelector(`[data-comment-id="${CSS.escape(comment.id)}"]`);
+      const textarea = row?.querySelector('textarea[data-comment-field="message"]');
+      if (textarea) textarea.focus();
+    }
+
+    function reminderDateText(r) {
+      return r.end_date && r.end_date !== r.reminder_date
+        ? `${r.reminder_date} ～ ${r.end_date}`
+        : r.reminder_date;
+    }
+
+    function renderReminders() {
+      if (!reminderListEl) return;
+      const sorted = [...reminders].sort((a, b) =>
+        String(a.reminder_date).localeCompare(String(b.reminder_date)) ||
+        String(a.created_at).localeCompare(String(b.created_at))
+      );
+      if (!sorted.length) {
+        reminderListEl.innerHTML = '<div class="empty">目前沒有自訂提醒。</div>';
+        return;
+      }
+      reminderListEl.innerHTML = sorted.map(r => `
+        <article class="reminder-item" data-reminder-id="${escapeHtml(r.id)}">
+          <div class="reminder-head">
+            <span class="reminder-title">${escapeHtml(r.title)}</span>
+            <span class="reminder-date">${escapeHtml(reminderDateText(r))}</span>
+          </div>
+          ${r.notes ? `<div class="reminder-note">${escapeHtml(r.notes)}</div>` : ''}
+          <div class="item-actions">
+            <button class="mini-btn" type="button" data-reminder-action="edit">編輯</button>
+            <button class="mini-btn danger" type="button" data-reminder-action="delete">刪除</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function taskCalendarEvents() {
+      const events = [];
+      tasks.forEach(t => {
+        TEAM_DEFS.forEach(team => {
+          if (!t[team.ownerField]) return;
+          const baseClasses = [
+            'calendar-task-event',
+            `calendar-${team.className}`,
+            t.is_closed ? 'closed-event' : '',
+            t.is_section ? 'calendar-section-event' : ''
+          ].filter(Boolean);
+
+          const startDate = cleanDate(t[team.startField]);
+          const endDate = cleanDate(t[team.endField]);
+          if (parseISODate(startDate)) {
+            events.push({
+              id: `task-start-${team.key}-${t.id}`,
+              title: `${team.label} ${t.item} start`,
+              start: startDate,
+              allDay: true,
+              classNames: [...baseClasses, 'calendar-start-event'],
+              extendedProps: {
+                kind: 'task-point', taskId: t.id, teamLabel: team.label,
+                taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 0,
+                pointType: 'start', pointDate: startDate, notes: t.notes || ''
+              }
+            });
+          }
+          if (parseISODate(endDate)) {
+            events.push({
+              id: `task-end-${team.key}-${t.id}`,
+              title: `${team.label} ${t.item} end`,
+              start: endDate,
+              allDay: true,
+              classNames: [...baseClasses, 'calendar-end-event'],
+              extendedProps: {
+                kind: 'task-point', taskId: t.id, teamLabel: team.label,
+                taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 1,
+                pointType: 'end', pointDate: endDate, notes: t.notes || ''
+              }
+            });
+          }
+        });
+      });
+      return events;
+    }
+
+    function reminderCalendarEvents() {
+      return reminders.filter(r => parseISODate(r.reminder_date)).map(r => ({
+        id: `reminder-${r.id}`,
+        title: `提醒 ${r.title}`,
+        start: r.reminder_date,
+        allDay: true,
+        classNames: ['calendar-reminder-event'],
+        extendedProps: { kind: 'reminder', reminderId: r.id, notes: r.notes || '', taskSeq: 999999, teamOrder: 99, pointOrder: 2 }
+      }));
+    }
+
+    async function createInlineReminder(date, title, inputEl = null) {
+      const cleanTitle = String(title || '').trim();
+      if (!cleanTitle || !parseISODate(date)) return;
+      if (inputEl) inputEl.disabled = true;
+
+      if (!isRemoteMode) {
+        reminders.push(normalizeReminder({
+          id: safeUuid(), title: cleanTitle, reminder_date: date, end_date: '', notes: ''
+        }));
+        if (inputEl) inputEl.value = '';
+        saveRemindersLocal();
+        if (inputEl) inputEl.disabled = false;
+        return;
+      }
+
+      try {
+        setSubStatus(reminderStatusEl, '新增中...');
+        const { error } = await db.from(REMINDERS_TABLE).insert({
+          title: cleanTitle,
+          reminder_date: date,
+          end_date: null,
+          notes: ''
+        });
+        if (error) throw error;
+        if (inputEl) inputEl.value = '';
+        await loadRemindersRemote();
+        renderCalendar();
+        setSubStatus(reminderStatusEl, '項目已同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(reminderStatusEl, `新增失敗：${err.message || err}`, 'err');
+      } finally {
+        if (inputEl && inputEl.isConnected) inputEl.disabled = false;
+      }
+    }
+
+    async function updateInlineReminder(reminder, title) {
+      const cleanTitle = String(title || '').trim();
+      if (!reminder || !cleanTitle) return;
+
+      if (!isRemoteMode) {
+        reminder.title = cleanTitle;
+        reminder.updated_at = new Date().toISOString();
+        saveRemindersLocal();
+        return;
+      }
+
+      try {
+        setSubStatus(reminderStatusEl, '儲存中...');
+        const { error } = await db.from(REMINDERS_TABLE)
+          .update({ title: cleanTitle })
+          .eq('id', reminder.id);
+        if (error) throw error;
+        reminder.title = cleanTitle;
+        renderCalendar();
+        setSubStatus(reminderStatusEl, '項目已更新', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(reminderStatusEl, `更新失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    function mountInlineReminderInput(info) {
+      const frame = info.el.querySelector('.fc-daygrid-day-frame');
+      if (!frame || frame.querySelector('.calendar-inline-add')) return;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'calendar-inline-add';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 500;
+      input.placeholder = '新增項目';
+      input.setAttribute('aria-label', `${info.dateStr} 新增項目`);
+      input.addEventListener('click', (e) => e.stopPropagation());
+      input.addEventListener('keydown', async (e) => {
+        if (e.key !== 'Enter' || e.isComposing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        await createInlineReminder(info.dateStr, input.value, input);
+      });
+      wrap.appendChild(input);
+      frame.appendChild(wrap);
+    }
+
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      if (!calendarEl || calendar || !window.FullCalendar) return;
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'zh-tw',
+        firstDay: 1,
+        height: 'auto',
+        dayMaxEvents: 7,
+        fixedWeekCount: false,
+        displayEventTime: false,
+        eventOrderStrict: true,
+        eventOrder(a, b) {
+          const ap = a.extendedProps || {};
+          const bp = b.extendedProps || {};
+          const aKind = ap.kind === 'task-point' ? 0 : 1;
+          const bKind = bp.kind === 'task-point' ? 0 : 1;
+          return aKind - bKind
+            || (Number(ap.taskSeq) || 0) - (Number(bp.taskSeq) || 0)
+            || (Number(ap.teamOrder) || 0) - (Number(bp.teamOrder) || 0)
+            || (Number(ap.pointOrder) || 0) - (Number(bp.pointOrder) || 0)
+            || String(a.title || '').localeCompare(String(b.title || ''));
+        },
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+        buttonText: { today: '今天' },
+        dateClick(info) {
+          const input = info.dayEl?.querySelector('.calendar-inline-add input');
+          if (input) input.focus();
+        },
+        dayCellDidMount(info) {
+          mountInlineReminderInput(info);
+        },
+        eventClick(info) {
+          const p = info.event.extendedProps || {};
+          if (p.kind === 'reminder') {
+            const reminder = reminders.find(r => r.id === p.reminderId);
+            if (!reminder) return;
+            const edited = prompt('修改項目內容；清空後按「確定」可刪除。', reminder.title);
+            if (edited === null) return;
+            if (!edited.trim()) {
+              deleteReminder(reminder.id);
+            } else {
+              updateInlineReminder(reminder, edited);
+            }
+            return;
+          }
+          if (p.kind === 'task-point') {
+            const task = tasks.find(t => t.id === p.taskId);
+            const lines = [
+              task?.item || info.event.title,
+              `Team：${p.teamLabel || ''}`,
+              `${p.pointType || ''}：${p.pointDate || ''}`
+            ];
+            if (p.notes) lines.push(`備註：${p.notes}`);
+            alert(lines.join('\n'));
+          }
+        },
+        eventDidMount(info) {
+          const p = info.event.extendedProps || {};
+          if (p.kind === 'task-point') {
+            info.el.title = `${info.event.title}${p.notes ? `
+備註：${p.notes}` : ''}`;
+          } else {
+            info.el.title = `${info.event.title}${p.notes ? `
+${p.notes}` : ''}`;
+          }
+        }
+      });
+      calendar.render();
+    }
+
+    function renderCalendar() {
+      initCalendar();
+      if (!calendar) return;
+      calendar.removeAllEvents();
+      calendar.addEventSource([...taskCalendarEvents(), ...reminderCalendarEvents()]);
+    }
+
+    function resetReminderForm() {
+      document.getElementById('reminderForm').reset();
+      document.getElementById('reminderId').value = '';
+      document.getElementById('reminderFormTitle').textContent = '新增提醒';
+      document.getElementById('saveReminderBtn').textContent = '新增提醒';
+      document.getElementById('cancelReminderEditBtn').hidden = true;
+    }
+
+    function beginReminderEdit(reminder = null, date = '') {
+      const r = reminder ? normalizeReminder(reminder) : null;
+      document.getElementById('reminderId').value = r ? r.id : '';
+      document.getElementById('reminderTitle').value = r ? r.title : '';
+      document.getElementById('reminderDate').value = r ? r.reminder_date : date;
+      document.getElementById('reminderFormTitle').textContent = r ? '編輯提醒' : '新增提醒';
+      document.getElementById('saveReminderBtn').textContent = r ? '儲存修改' : '新增提醒';
+      document.getElementById('cancelReminderEditBtn').hidden = !r;
+      document.querySelector('.calendar-side').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function saveReminderFromForm() {
+      const id = document.getElementById('reminderId').value.trim();
+      const title = document.getElementById('reminderTitle').value.trim();
+      const reminderDate = document.getElementById('reminderDate').value;
+
+      if (!title || !reminderDate) {
+        setSubStatus(reminderStatusEl, '請填日期與提醒內容', 'err');
+        return;
+      }
+
+      if (!isRemoteMode) {
+        const existing = reminders.find(r => r.id === id);
+        if (existing) {
+          Object.assign(existing, { title, reminder_date: reminderDate, end_date: '', notes: '', updated_at: new Date().toISOString() });
+        } else {
+          reminders.push(normalizeReminder({ id: safeUuid(), title, reminder_date: reminderDate, end_date: '', notes: '' }));
+        }
+        resetReminderForm();
+        saveRemindersLocal();
+        return;
+      }
+
+      try {
+        setSubStatus(reminderStatusEl, '儲存中...');
+        const payload = { title, reminder_date: reminderDate, end_date: null, notes: '' };
+        const result = id
+          ? await db.from(REMINDERS_TABLE).update(payload).eq('id', id)
+          : await db.from(REMINDERS_TABLE).insert(payload);
+        if (result.error) throw result.error;
+        await loadRemindersRemote();
+        resetReminderForm();
+        renderReminders();
+        renderCalendar();
+        setSubStatus(reminderStatusEl, '提醒已同步', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(reminderStatusEl, `儲存失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    async function deleteReminder(id) {
+      const reminder = reminders.find(r => r.id === id);
+      if (!reminder || !confirm(`確定刪除提醒「${reminder.title}」？`)) return;
+      if (!isRemoteMode) {
+        reminders = reminders.filter(r => r.id !== id);
+        saveRemindersLocal();
+        return;
+      }
+      try {
+        const { error } = await db.from(REMINDERS_TABLE).delete().eq('id', id);
+        if (error) throw error;
+        reminders = reminders.filter(r => r.id !== id);
+        renderReminders();
+        renderCalendar();
+        setSubStatus(reminderStatusEl, '提醒已刪除', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(reminderStatusEl, `刪除失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    async function deleteComment(id) {
+      const comment = comments.find(c => c.id === id);
+      if (!comment || !confirm('確定刪除這則留言？')) return;
+      if (!isRemoteMode) {
+        comments = comments.filter(c => c.id !== id);
+        saveCommentsLocal();
+        return;
+      }
+      try {
+        const { error } = await db.from(COMMENTS_TABLE).delete().eq('id', id);
+        if (error) throw error;
+        comments = comments.filter(c => c.id !== id);
+        renderComments();
+        setSubStatus(commentStatusEl, '留言已刪除', 'ok');
+      } catch (err) {
+        console.error(err);
+        setSubStatus(commentStatusEl, `刪除失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    function subscribeCollaborationRemote() {
+      if (!isRemoteMode) return;
+      if (!commentChannel) {
+        commentChannel = db
+          .channel('project_comments_realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: COMMENTS_TABLE }, async () => {
+            if (Date.now() < ignoreCommentRemoteUntil) return;
+            await loadCommentsRemote();
+            renderComments();
+          })
+          .subscribe();
+      }
+      if (!reminderChannel) {
+        reminderChannel = db
+          .channel('project_reminders_realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: REMINDERS_TABLE }, async () => {
+            await loadRemindersRemote();
+            renderReminders();
+            renderCalendar();
+          })
+          .subscribe();
+      }
+    }
+
+    document.getElementById('addCommentRowBtn').addEventListener('click', () => addCommentRow());
+
+    commentTbody.addEventListener('change', (e) => {
+      const field = e.target.dataset.commentField;
+      if (!field) return;
+      const row = e.target.closest('[data-comment-id]');
+      const comment = comments.find(c => c.id === row?.dataset.commentId);
+      if (!comment) return;
+      comment[field] = e.target.value;
+      saveComment(comment);
+    });
+
+    commentTbody.addEventListener('blur', (e) => {
+      const field = e.target.dataset.commentField;
+      if (!field || e.target.tagName !== 'TEXTAREA') return;
+      const row = e.target.closest('[data-comment-id]');
+      const comment = comments.find(c => c.id === row?.dataset.commentId);
+      if (!comment) return;
+      comment[field] = e.target.value;
+      saveComment(comment);
+    }, true);
+
+    commentTbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-comment-action="delete"]');
+      if (!btn) return;
+      const row = btn.closest('[data-comment-id]');
+      if (row) deleteComment(row.dataset.commentId);
+    });
+
+    const reminderFormEl = document.getElementById('reminderForm');
+    if (reminderFormEl) {
+      reminderFormEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveReminderFromForm();
+      });
+    }
+
+    const cancelReminderEditBtn = document.getElementById('cancelReminderEditBtn');
+    if (cancelReminderEditBtn) cancelReminderEditBtn.addEventListener('click', resetReminderForm);
+
+    if (reminderListEl) {
+      reminderListEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-reminder-action]');
+        if (!btn) return;
+        const item = btn.closest('[data-reminder-id]');
+        if (!item) return;
+        const reminder = reminders.find(r => r.id === item.dataset.reminderId);
+        if (!reminder) return;
+        if (btn.dataset.reminderAction === 'edit') beginReminderEdit(reminder);
+        if (btn.dataset.reminderAction === 'delete') deleteReminder(reminder.id);
+      });
+    }
+
 
     tbody.addEventListener('change', (e) => {
       const tr = e.target.closest('tr[data-id]');
@@ -1058,46 +2073,7 @@
       scheduleSave();
     });
 
-    document.getElementById('saveNowBtn').addEventListener('click', () => remoteSaveAll());
 
-    document.getElementById('exportCsvBtn').addEventListener('click', () => {
-      const rows = [[
-        '項目','結案',
-        'PM/FAE_負責','PM/FAE_start','PM/FAE_end','PM/FAE_LT',
-        'SYSTEM_負責','SYSTEM_start','SYSTEM_end','SYSTEM_LT',
-        'DATA_負責','DATA_start','DATA_end','DATA_LT',
-        'MODEL_負責','MODEL_start','MODEL_end','MODEL_LT',
-        '總_start','總_end','總_LT','備註'
-      ]];
-      tasks.forEach(t => {
-        const overall = getOverallRange(t);
-        const row = [t.item, t.is_closed ? 'Y' : ''];
-        TEAM_DEFS.forEach(team => {
-          row.push(
-            t[team.ownerField] ? 'v' : '',
-            t[team.startField] || '',
-            t[team.endField] || '',
-            calcLead(t[team.startField], t[team.endField]).text
-          );
-        });
-        row.push(overall.start || '', overall.end || '', calcLead(overall.start, overall.end).text, t.notes || '');
-        rows.push(row);
-      });
-      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'project_gantt_team_dates.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    calcModeEl.addEventListener('change', () => {
-      localStorage.setItem(modeKey, calcModeEl.value);
-      renderAll();
-      scheduleSave();
-    });
 
     ganttModeEl.addEventListener('change', () => {
       localStorage.setItem(ganttModeKey, ganttModeEl.value);
