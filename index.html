@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="./config.js"></script>
   <style>
     :root {
@@ -15,7 +16,7 @@
       --text: #1f2937;
       --muted: #6b7280;
       --line: #d1d5db;
-      --head: #b9cbe8;
+      --head: #9fb8dc;
       --section: #dfe8f6;
       --bar-overall: #475569;
       --bar-pm: #2563eb;
@@ -165,7 +166,7 @@
     }
 
     thead tr:first-child th { height: 27px; }
-    thead tr:nth-child(2) th { top: 27px; background: #d6e1f4; z-index: 7; }
+    thead tr:nth-child(2) th { top: 27px; background: var(--head); z-index: 7; }
 
     /* 凍結表格左側「項目」欄，橫向捲動時仍可看到每列標題 */
     thead tr:first-child th:first-child {
@@ -313,28 +314,31 @@
 
     .scale {
       position: relative;
-      height: 26px;
+      height: 44px;
       min-width: calc(var(--days) * var(--dayw));
       border-left: 1px solid #cbd5e1;
       background-image: linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px);
       background-size: var(--dayw) 100%;
     }
 
-    .tick {
+    /* 甘特圖表頭：年月在第一列，日期在第二列，避免文字重疊 */
+    .month-tick {
       position: absolute;
-      top: 2px;
+      top: 3px;
       font-size: 11px;
-      color: #475569;
+      line-height: 16px;
+      font-weight: 700;
+      color: #1f2937;
       white-space: nowrap;
       transform: translateX(3px);
     }
 
-    .month-tick {
+    .tick {
       position: absolute;
-      bottom: 2px;
+      bottom: 3px;
       font-size: 11px;
-      font-weight: 700;
-      color: #1f2937;
+      line-height: 16px;
+      color: #475569;
       white-space: nowrap;
       transform: translateX(3px);
     }
@@ -578,6 +582,47 @@
       #calendar { min-height: 460px; }
     }
 
+
+    /* v19：左上「項目」欄永遠位於日期列上方，水平捲動時日期不穿透。 */
+    .gantt-table thead,
+    .gantt-table thead tr {
+      position: static !important;
+      z-index: auto !important;
+    }
+    .gantt-table thead th {
+      position: sticky !important;
+      top: 0 !important;
+      background: #ffffff !important;
+      background-clip: border-box !important;
+    }
+    .gantt-table thead .gantt-scale-cell {
+      left: auto !important;
+      z-index: 200 !important;
+      overflow: hidden !important;
+      isolation: isolate;
+    }
+    .gantt-table thead .gantt-label-cell {
+      position: sticky !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 300 !important;
+      overflow: hidden !important;
+      isolation: isolate;
+      background: #ffffff !important;
+      background-clip: border-box !important;
+      box-shadow: 3px 0 0 #cbd5e1, 0 2px 0 #cbd5e1 !important;
+    }
+    .gantt-table tbody .gantt-label-cell {
+      z-index: 150 !important;
+      background-clip: border-box !important;
+      box-shadow: 3px 0 0 #cbd5e1 !important;
+    }
+    .gantt-table thead .gantt-scale-cell .scale,
+    .gantt-table thead .gantt-scale-cell .tick,
+    .gantt-table thead .gantt-scale-cell .month-tick {
+      z-index: 1 !important;
+    }
+
     @media (max-width: 760px) {
       header, main { padding-left: 12px; padding-right: 12px; }
       .status { margin-left: 0; width: 100%; }
@@ -729,6 +774,419 @@
       font-size: 11px;
     }
 
+
+    /* v13：各區塊匯出功能 */
+    /* v14：修正日曆 Enter 儲存與甘特圖雙列表頭 */
+    /* v15：日曆自由項目刪除鍵、階段列自動彙總 */
+    /* v16：甘特圖固定欄實心、階段列文字調整、週末假日唯讀 */
+    .section-summary-cell {
+      padding: 3px 2px;
+      text-align: center;
+      color: #334155;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    .section-summary-cell .section-date,
+    .section-summary-cell .section-lead {
+      display: inline-block;
+      min-width: 54px;
+      font-weight: 700;
+    }
+    .section-summary-cell .section-empty { color: #94a3b8; }
+    .section-total-summary {
+      min-width: 70px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .section-total-summary strong,
+    .section-total-summary small { display: block; }
+    .section-total-summary small { color: #475569; font-size: 9px; }
+
+    .calendar-reminder-content {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      width: 100%;
+      min-width: 0;
+    }
+    .calendar-reminder-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .calendar-reminder-delete {
+      flex: 0 0 13px;
+      width: 13px;
+      height: 13px;
+      border: 0;
+      border-radius: 50%;
+      padding: 0;
+      background: rgba(255,255,255,.92);
+      color: #991b1b;
+      font: 700 10px/13px Arial, sans-serif;
+      text-align: center;
+      cursor: pointer;
+    }
+    .calendar-reminder-delete:hover { background: #fee2e2; }
+
+    /* v16：甘特圖固定欄實心、月曆欄位對齊與週末唯讀 */
+    .gantt { isolation: isolate; }
+    .gantt-head {
+      background-color: #ffffff !important;
+      isolation: isolate;
+    }
+    .gantt-head .gantt-label {
+      background-color: #ffffff !important;
+      z-index: 16;
+      overflow: hidden;
+    }
+    .gantt-head .scale {
+      background-color: #ffffff !important;
+      z-index: 15;
+      overflow: hidden;
+    }
+    .gantt-row .gantt-label {
+      background-color: #ffffff !important;
+      z-index: 8;
+      overflow: hidden;
+    }
+    .gantt-row.section .gantt-label { background-color: #f3f6fc !important; }
+    .gantt-row.closed .gantt-label { background-color: #e5e7eb !important; }
+
+    /* 強制月曆表頭與日期格共用相同寬度，避免欄位錯位 */
+    #calendar { width: 100%; min-width: 0; }
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid table,
+    .fc .fc-col-header,
+    .fc .fc-daygrid-body,
+    .fc .fc-scrollgrid-sync-table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      box-sizing: border-box;
+    }
+    .fc .fc-col-header-cell,
+    .fc .fc-daygrid-day {
+      width: 14.285714% !important;
+      max-width: 14.285714% !important;
+    }
+
+    /* 週六、週日視為假日：唯讀、無新增框，並以不同底色顯示 */
+    .fc .calendar-holiday-header {
+      background: #fee2e2 !important;
+      color: #991b1b;
+    }
+    .fc .calendar-holiday-cell {
+      background: #fff1f2 !important;
+    }
+    .fc .calendar-holiday-cell .fc-daygrid-day-number {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+    .fc .calendar-holiday-cell .fc-daygrid-day-frame {
+      padding-bottom: 20px;
+    }
+    .fc .calendar-holiday-cell .fc-daygrid-day-frame::after {
+      content: '假日';
+      position: absolute;
+      right: 5px;
+      bottom: 4px;
+      color: #be123c;
+      font-size: 9px;
+      font-weight: 700;
+      opacity: .72;
+      pointer-events: none;
+    }
+
+
+    /* v17：今日任務摘要、甘特圖真正凍結表頭/項目欄 */
+    .today-agenda {
+      margin-top: 9px;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #ffffff;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      line-height: 1.45;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
+    }
+    .today-agenda-date {
+      flex: 0 0 auto;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+    .today-agenda-list {
+      display: flex;
+      flex: 1 1 560px;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .today-agenda-empty { color: #64748b; padding-top: 2px; }
+    .today-agenda-item {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      min-width: 0;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #1f2937;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .today-agenda-item.pm { border-left: 4px solid var(--bar-pm); }
+    .today-agenda-item.system { border-left: 4px solid var(--bar-system); }
+    .today-agenda-item.data { border-left: 4px solid var(--bar-data); }
+    .today-agenda-item.model { border-left: 4px solid var(--bar-model); }
+    .today-agenda-item.reminder { border-left: 4px solid #b45309; }
+
+    /* 使用 table + sticky 儲存格，避免水平/垂直捲動後表頭、項目欄失效或穿透。 */
+    .gantt-wrap {
+      overflow: auto !important;
+      position: relative;
+      isolation: isolate;
+      padding: 0 0 8px !important;
+      background: #ffffff;
+      overscroll-behavior: contain;
+    }
+    .gantt {
+      --gantt-label-w: 350px;
+      min-width: 100% !important;
+      width: max-content;
+      padding: 0 !important;
+      position: relative;
+      isolation: isolate;
+      background: #ffffff;
+    }
+    .gantt-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      width: calc(var(--gantt-label-w) + var(--timeline-width));
+      min-width: 100%;
+      background: #ffffff;
+    }
+    .gantt-table .gantt-label-col { width: var(--gantt-label-w); }
+    .gantt-table .gantt-timeline-col { width: var(--timeline-width); }
+    .gantt-table th,
+    .gantt-table td {
+      padding: 0;
+      border: 0;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+    .gantt-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      background: #ffffff !important;
+      box-shadow: 0 2px 0 #cbd5e1;
+      background-clip: padding-box;
+    }
+    .gantt-table .gantt-label-cell {
+      width: var(--gantt-label-w);
+      min-width: var(--gantt-label-w);
+      max-width: var(--gantt-label-w);
+      padding: 3px 10px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: #ffffff !important;
+      background-clip: padding-box;
+      box-shadow: 2px 0 0 #cbd5e1;
+    }
+    .gantt-table thead .gantt-label-cell {
+      position: sticky;
+      left: 0;
+      top: 0;
+      z-index: 90;
+      height: 48px;
+      font-weight: 700;
+    }
+    .gantt-table tbody .gantt-label-cell {
+      position: sticky;
+      left: 0;
+      z-index: 40;
+    }
+    .gantt-table tbody tr.section .gantt-label-cell {
+      background: #f3f6fc !important;
+      font-weight: 700;
+    }
+    .gantt-table tbody tr.closed .gantt-label-cell {
+      background: #e5e7eb !important;
+      color: #6b7280;
+      text-decoration: line-through;
+    }
+    .gantt-table .gantt-scale-cell,
+    .gantt-table .gantt-timeline-cell {
+      width: var(--timeline-width);
+      min-width: var(--timeline-width);
+      max-width: var(--timeline-width);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      background: #ffffff !important;
+      background-clip: padding-box;
+    }
+    .gantt-table .scale,
+    .gantt-table .timeline {
+      width: var(--timeline-width);
+      min-width: var(--timeline-width);
+      max-width: var(--timeline-width);
+    }
+    .gantt-table .scale { height: 48px; }
+    .gantt-table tbody tr.closed .gantt-timeline-cell,
+    .gantt-table tbody tr.closed .timeline { background-color: #f3f4f6 !important; }
+
+    /* v18：日曆完整收進容器、甘特圖日期列固定、WBS 表頭加深 */
+    /* 隔離全域 WBS table 的 min-width/zoom，避免 FullCalendar 被撐出容器。 */
+    #calendar .fc table,
+    #calendar .fc-scrollgrid,
+    #calendar .fc-scrollgrid table,
+    #calendar .fc-col-header,
+    #calendar .fc-daygrid-body,
+    #calendar .fc-scrollgrid-sync-table {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      table-layout: fixed !important;
+      zoom: 1 !important;
+      box-sizing: border-box !important;
+    }
+    #calendar .fc-scrollgrid-section,
+    #calendar .fc-scrollgrid-section > td,
+    #calendar .fc-daygrid-day,
+    #calendar .fc-col-header-cell {
+      min-width: 0 !important;
+      overflow: hidden;
+    }
+    #calendar .fc-col-header-cell,
+    #calendar .fc-daygrid-day {
+      width: 14.285714% !important;
+      max-width: 14.285714% !important;
+    }
+    /* 週一至週五稍寬、週六週日稍窄；表頭與日期格使用相同比例。 */
+    #calendar .fc-col-header col:nth-child(-n+5),
+    #calendar .fc-daygrid-body col:nth-child(-n+5),
+    #calendar .fc-scrollgrid-sync-table col:nth-child(-n+5),
+    #calendar .fc-col-header-cell:nth-child(-n+5),
+    #calendar .fc-daygrid-day:nth-child(-n+5) {
+      width: 15.2% !important;
+      max-width: 15.2% !important;
+    }
+    #calendar .fc-col-header col:nth-child(n+6),
+    #calendar .fc-daygrid-body col:nth-child(n+6),
+    #calendar .fc-scrollgrid-sync-table col:nth-child(n+6),
+    #calendar .fc-col-header-cell:nth-child(n+6),
+    #calendar .fc-daygrid-day:nth-child(n+6) {
+      width: 12% !important;
+      max-width: 12% !important;
+    }
+    #calendar .fc-daygrid-day-frame,
+    #calendar .fc-daygrid-day-events,
+    #calendar .fc-daygrid-event-harness,
+    #calendar .fc-daygrid-event {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      overflow: hidden;
+    }
+    #calendar .calendar-inline-add {
+      max-width: calc(100% - 6px);
+      overflow: hidden;
+    }
+    #calendar .calendar-inline-add input {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    /* 原本 gantt-scale-cell 後段樣式會把 sticky 覆寫成 relative；在此強制恢復日期列固定。 */
+    .gantt-table thead,
+    .gantt-table thead tr {
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      background: #ffffff;
+    }
+    .gantt-table thead .gantt-scale-cell {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 85 !important;
+      overflow: hidden;
+      background: #ffffff !important;
+      box-shadow: 0 2px 0 #cbd5e1;
+    }
+    .gantt-table thead .gantt-scale-cell .scale {
+      position: relative;
+      z-index: 1;
+      background: #ffffff !important;
+    }
+
+
+    @media (max-width: 760px) {
+      .gantt { --gantt-label-w: 240px; }
+      .today-agenda { display: block; }
+      .today-agenda-list { margin-top: 6px; }
+    }
+
+    .export-btn {
+      white-space: nowrap;
+    }
+    .export-btn[disabled] {
+      opacity: .55;
+      cursor: wait;
+    }
+    .calendar-export-actions,
+    .gantt-export-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+
+
+    /* v19：台灣國定假日（2026）納入工作天與日曆 */
+    .fc .calendar-national-holiday-cell {
+      background: #fff7ed !important;
+      box-shadow: inset 0 0 0 1px #fdba74;
+    }
+    .fc .calendar-national-holiday-cell .fc-daygrid-day-number {
+      color: #c2410c !important;
+      font-weight: 800;
+    }
+    .fc .calendar-national-holiday-cell .fc-daygrid-day-frame::after {
+      content: none !important;
+    }
+    .calendar-national-holiday-name {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 3px;
+      z-index: 7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #c2410c;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.15;
+      pointer-events: none;
+    }
+
   </style>
 </head>
 <body>
@@ -737,6 +1195,10 @@
       <h1>uO-PTI P8</h1>
       <span id="status" class="status warn">初始化中...</span>
     </div>
+    <div id="todayAgenda" class="today-agenda" aria-live="polite">
+      <div class="today-agenda-date">今天是 --</div>
+      <div class="today-agenda-list"><span class="today-agenda-empty">正在載入今日任務...</span></div>
+    </div>
   </header>
 
   <main>
@@ -744,6 +1206,7 @@
       <div class="panel-title">
         <h2>留言板</h2>
         <div class="panel-title-actions">
+          <button class="export-btn" id="exportCommentsBtn">匯出 CSV</button>
           <button class="primary" id="addCommentRowBtn">新增留言</button>
           <span id="commentStatus" class="sub-status"></span>
         </div>
@@ -773,7 +1236,12 @@
           <span class="calendar-key"><i class="data-key"></i>DATA</span>
           <span class="calendar-key"><i class="model-key"></i>MODEL</span>
           <span class="calendar-key"><i class="reminder-key"></i>自由提醒</span>
-          <span class="hint">WBS 僅標記 start／end；每個日期格下方可直接新增項目。</span>
+          <span class="calendar-key"><i class="holiday-key"></i>國定假日</span>
+          <span class="hint">WBS 僅標記 start／end；週末與國定假日唯讀。</span>
+          <span class="calendar-export-actions">
+            <button class="export-btn" id="exportCalendarCsvBtn">匯出 CSV</button>
+            <button class="export-btn" id="exportCalendarPngBtn">匯出 PNG</button>
+          </span>
           <span id="reminderStatus" class="sub-status"></span>
         </div>
       </div>
@@ -803,6 +1271,9 @@
             <span class="legend-item"><i class="legend-dot model"></i>MODEL</span>
             <span class="legend-item"><i class="legend-dot overall"></i>總覽</span>
           </span>
+          <span class="gantt-export-actions">
+            <button class="export-btn" id="exportGanttPngBtn">匯出 PNG</button>
+          </span>
         </div>
       </div>
       <div class="gantt-wrap">
@@ -814,7 +1285,8 @@
       <div class="panel-title">
         <h2>WBS</h2>
         <div class="panel-title-actions">
-          <span class="wbs-hint">LT 固定以工作天計算（含起迄日，不含週六、週日）</span>
+          <span class="wbs-hint">LT 固定以工作天計算（含起迄日，扣除週六、週日及台灣國定假日）</span>
+          <button class="export-btn" id="exportWbsBtn">匯出 CSV</button>
           <button class="primary" id="addRowBtn">新增列</button>
         </div>
       </div>
@@ -846,7 +1318,7 @@
 
     <p class="footer-note">
       共編保存方式：若 config.js 已設定 Supabase，WBS、留言與提醒會儲存在雲端並即時同步；若未設定，資料只會保存在目前瀏覽器的 localStorage。<br>
-      v12 更新：日曆同項目固定 start 在上、end 在下；每個日期格可直接輸入「新增項目」，按 Enter 同步。
+      v19 更新：WBS 工作天扣除週末及 2026 年台灣國定假日；日曆同步標示國定假日並設為唯讀。
     </p>
   </main>
 
@@ -860,6 +1332,32 @@
 
     const COMMENT_AUTHORS = ['PM/FAE', 'SYSTEM', 'DATA', 'MODEL'];
     const COMMENT_TARGETS = ['ALL', ...COMMENT_AUTHORS];
+
+    // 依行政院人事行政總處 2026 年政府行政機關辦公日曆表。
+    // WBS 工作天會扣除下列日期；日曆亦會標示並禁止新增自由項目。
+    const TAIWAN_NATIONAL_HOLIDAYS = Object.freeze({
+      '2026-01-01': '開國紀念日',
+      '2026-02-16': '除夕前一日',
+      '2026-02-17': '春節',
+      '2026-02-18': '春節',
+      '2026-02-19': '春節',
+      '2026-02-20': '春節補假',
+      '2026-02-27': '和平紀念日補假',
+      '2026-02-28': '和平紀念日',
+      '2026-04-03': '兒童節補假',
+      '2026-04-04': '兒童節',
+      '2026-04-05': '清明節',
+      '2026-04-06': '清明節補假',
+      '2026-05-01': '勞動節',
+      '2026-06-19': '端午節',
+      '2026-09-25': '中秋節',
+      '2026-09-28': '孔子誕辰紀念日／教師節',
+      '2026-10-09': '國慶日補假',
+      '2026-10-10': '國慶日',
+      '2026-10-25': '臺灣光復暨金門古寧頭大捷紀念日',
+      '2026-10-26': '臺灣光復紀念日補假',
+      '2026-12-25': '行憲紀念日'
+    });
 
     const DEFAULT_TASKS = [
       { id: 'sec-0', seq: 0, item: '0. 專案前置', is_section: true, pm_fae: false, owner_system: false, owner_data: false, owner_model: false, start_date: '', end_date: '' },
@@ -921,6 +1419,7 @@
     const commentStatusEl = document.getElementById('commentStatus');
     const reminderListEl = document.getElementById('reminderList');
     const reminderStatusEl = document.getElementById('reminderStatus');
+    const todayAgendaEl = document.getElementById('todayAgenda');
 
     function setStatus(text, type = 'warn') {
       statusEl.textContent = text;
@@ -1004,7 +1503,7 @@
       let count = 0;
       for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
         const day = d.getDay();
-        if (day !== 0 && day !== 6) count += 1;
+        if (day !== 0 && day !== 6 && !isTaiwanNationalHoliday(d)) count += 1;
       }
       return { text: String(count), invalid: false };
     }
@@ -1019,15 +1518,243 @@
       return value ? value : null;
     }
 
+
+    function fileTimestamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? '').replace(/\r?\n/g, ' ');
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadCsv(filename, headers, rows) {
+      const csv = [headers, ...rows]
+        .map(row => row.map(csvCell).join(','))
+        .join('\r\n');
+      downloadBlob(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' }), filename);
+    }
+
+    function exportCommentsCsv() {
+      const rows = [...comments]
+        .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+        .map(c => [c.author, c.audience, c.message, c.reply, formatDateTime(c.created_at), formatDateTime(c.updated_at)]);
+      downloadCsv(
+        `uO-PTI_P8_留言板_${fileTimestamp()}.csv`,
+        ['留言人', '對象', '內容', '回覆', '建立時間', '更新時間'],
+        rows
+      );
+    }
+
+    function calendarExportRows() {
+      const rows = [];
+      tasks.forEach(t => {
+        if (t.is_section) return;
+        TEAM_DEFS.forEach(team => {
+          const teamInfo = getEffectiveTeamSummary(t, team);
+          if (!teamInfo.owner) return;
+          const startDate = cleanDate(teamInfo.start);
+          const endDate = cleanDate(teamInfo.end);
+          if (parseISODate(startDate)) rows.push([startDate, 'WBS', team.label, t.item, 'start', t.notes || '']);
+          if (parseISODate(endDate)) rows.push([endDate, 'WBS', team.label, t.item, 'end', t.notes || '']);
+        });
+      });
+      reminders.forEach(r => {
+        if (parseISODate(r.reminder_date)) rows.push([r.reminder_date, '自由項目', '', r.title, '', r.notes || '']);
+      });
+      Object.entries(TAIWAN_NATIONAL_HOLIDAYS).forEach(([date, name]) => {
+        rows.push([date, '國定假日', '', name, '', '不計工作天']);
+      });
+      return rows.sort((a, b) =>
+        String(a[0]).localeCompare(String(b[0]))
+        || (a[4] === 'start' ? 0 : a[4] === 'end' ? 1 : 2) - (b[4] === 'start' ? 0 : b[4] === 'end' ? 1 : 2)
+        || String(a[2]).localeCompare(String(b[2]))
+        || String(a[3]).localeCompare(String(b[3]))
+      );
+    }
+
+    function exportCalendarCsv() {
+      downloadCsv(
+        `uO-PTI_P8_日曆_${fileTimestamp()}.csv`,
+        ['日期', '類型', 'Team', '項目', '節點', '備註'],
+        calendarExportRows()
+      );
+    }
+
+    function exportWbsCsv() {
+      const headers = ['項目', '結案'];
+      TEAM_DEFS.forEach(team => headers.push(`${team.label} 負責`, `${team.label} start`, `${team.label} end`, `${team.label} LT工作天`));
+      headers.push('總 LT / 工作天', '備註');
+
+      const rows = tasks.map(t => {
+        const row = [t.item, t.is_closed ? '是' : '否'];
+        TEAM_DEFS.forEach(team => {
+          const teamInfo = getEffectiveTeamSummary(t, team);
+          row.push(
+            teamInfo.owner ? '是' : '否',
+            teamInfo.start || '',
+            teamInfo.end || '',
+            teamInfo.lead.text
+          );
+        });
+        if (t.is_section) {
+          const summary = getSectionSummary(t);
+          const rangeLead = summary.rangeLead?.text || '';
+          const summedWorkdays = summary.summedLead ? String(summary.summedLead) : '';
+          row.push(`LT: ${rangeLead || '—'} / 工作天: ${summedWorkdays || '—'}`, t.notes || '');
+        } else {
+          const overall = getOverallRange(t);
+          row.push(calcLead(overall.start, overall.end).text, t.notes || '');
+        }
+        return row;
+      });
+
+      downloadCsv(`uO-PTI_P8_WBS_${fileTimestamp()}.csv`, headers, rows);
+    }
+
+    async function exportElementPng(element, filename, button = null) {
+      if (!element) return;
+      if (!window.html2canvas) {
+        alert('圖片匯出元件尚未載入，請重新整理後再試。');
+        return;
+      }
+      const oldText = button?.textContent || '';
+      if (button) {
+        button.disabled = true;
+        button.textContent = '產生中...';
+      }
+      try {
+        const width = Math.max(element.scrollWidth, element.offsetWidth);
+        const height = Math.max(element.scrollHeight, element.offsetHeight);
+        const canvas = await window.html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width,
+          height,
+          windowWidth: width,
+          windowHeight: height,
+          scrollX: 0,
+          scrollY: -window.scrollY
+        });
+        canvas.toBlob(blob => {
+          if (blob) downloadBlob(blob, filename);
+        }, 'image/png');
+      } catch (err) {
+        console.error(err);
+        alert(`匯出失敗：${err.message || err}`);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = oldText;
+        }
+      }
+    }
+
+    function getSectionChildren(sectionTask) {
+      if (!sectionTask?.is_section) return [];
+      const sorted = sortTasks(tasks);
+      const index = sorted.findIndex(t => t.id === sectionTask.id);
+      if (index < 0) return [];
+      const children = [];
+      for (let i = index + 1; i < sorted.length; i += 1) {
+        if (sorted[i].is_section) break;
+        children.push(sorted[i]);
+      }
+      return children;
+    }
+
+    function rangeFromIsoDates(values) {
+      const dates = values.map(parseISODate).filter(Boolean);
+      if (!dates.length) return { start: '', end: '' };
+      return {
+        start: toISODate(new Date(Math.min(...dates.map(d => d.getTime())))),
+        end: toISODate(new Date(Math.max(...dates.map(d => d.getTime()))))
+      };
+    }
+
+    function getSectionSummary(sectionTask) {
+      const children = getSectionChildren(sectionTask);
+      const teams = {};
+      const allDates = [];
+
+      TEAM_DEFS.forEach(team => {
+        const dates = [];
+        let owner = false;
+        children.forEach(child => {
+          if (!child[team.ownerField]) return;
+          owner = true;
+          const start = cleanDate(child[team.startField]);
+          const end = cleanDate(child[team.endField]);
+          if (parseISODate(start)) dates.push(start);
+          if (parseISODate(end)) dates.push(end);
+        });
+        const range = rangeFromIsoDates(dates);
+        if (range.start) allDates.push(range.start);
+        if (range.end) allDates.push(range.end);
+        teams[team.key] = {
+          owner,
+          start: range.start,
+          end: range.end,
+          lead: calcLead(range.start, range.end)
+        };
+      });
+
+      let summedLead = 0;
+      children.forEach(child => {
+        const range = getOverallRange(child);
+        const lead = calcLead(range.start, range.end);
+        if (!lead.invalid && /^\d+$/.test(lead.text)) summedLead += Number(lead.text);
+      });
+
+      const overall = rangeFromIsoDates(allDates);
+      return {
+        children,
+        teams,
+        overall,
+        rangeLead: calcLead(overall.start, overall.end),
+        summedLead
+      };
+    }
+
+    function getEffectiveTeamSummary(t, team) {
+      if (t.is_section) return getSectionSummary(t).teams[team.key];
+      return {
+        owner: Boolean(t[team.ownerField]),
+        start: cleanDate(t[team.startField]),
+        end: cleanDate(t[team.endField]),
+        lead: calcLead(t[team.startField], t[team.endField])
+      };
+    }
+
+    function getDisplayOverallRange(t) {
+      return t.is_section ? getSectionSummary(t).overall : getOverallRange(t);
+    }
+
     function getTeamSegments(t) {
       return TEAM_DEFS.map(team => {
-        const startObj = parseISODate(t[team.startField]);
-        const endObj = parseISODate(t[team.endField]);
+        const info = getEffectiveTeamSummary(t, team);
+        const startObj = parseISODate(info.start);
+        const endObj = parseISODate(info.end);
         return {
           ...team,
-          checked: Boolean(t[team.ownerField]),
-          start: t[team.startField] || '',
-          end: t[team.endField] || '',
+          checked: Boolean(info.owner),
+          start: info.start || '',
+          end: info.end || '',
           startObj,
           endObj,
           valid: Boolean(startObj && endObj && endObj >= startObj)
@@ -1071,17 +1798,40 @@
       `;
     }
 
+    function sectionTeamCells(summary, team) {
+      const info = summary.teams[team.key];
+      const start = info.start || '—';
+      const end = info.end || '—';
+      const lead = info.lead.text || '—';
+      return `
+        <td class="owner-cell section-summary-cell" title="由此階段的一般列自動判斷">${info.owner ? '✓' : '—'}</td>
+        <td class="date-cell section-summary-cell"><span class="section-date ${info.start ? '' : 'section-empty'}">${escapeHtml(start)}</span></td>
+        <td class="date-cell section-summary-cell"><span class="section-date ${info.end ? '' : 'section-empty'}">${escapeHtml(end)}</span></td>
+        <td class="lead-cell section-summary-cell ${info.lead.invalid ? 'invalid' : ''}"><span class="section-lead ${info.lead.text ? '' : 'section-empty'}">${escapeHtml(lead)}</span></td>
+      `;
+    }
+
     function renderTable() {
       tbody.innerHTML = tasks.map(t => {
-        const overall = getOverallRange(t);
-        const lead = calcLead(overall.start, overall.end);
+        const sectionSummary = t.is_section ? getSectionSummary(t) : null;
+        const overall = t.is_section ? sectionSummary.overall : getOverallRange(t);
+        const lead = t.is_section ? sectionSummary.rangeLead : calcLead(overall.start, overall.end);
         const rowClass = [t.is_section ? 'section-row' : '', t.is_closed ? 'closed-row' : ''].filter(Boolean).join(' ');
+        const teamHtml = t.is_section
+          ? TEAM_DEFS.map(team => sectionTeamCells(sectionSummary, team)).join('')
+          : TEAM_DEFS.map(team => teamCells(t, team)).join('');
+        const totalLeadHtml = t.is_section
+          ? `<td class="lead-cell section-total-summary ${lead.invalid ? 'invalid' : ''}" title="LT 為階段最早日至最晚日的工作天；工作天為階段內各一般列總工作天的加總">
+               <strong>LT: ${escapeHtml(lead.text || '—')}</strong>
+               <small>工作天: ${escapeHtml(sectionSummary.summedLead ? String(sectionSummary.summedLead) : '—')}</small>
+             </td>`
+          : `<td class="lead-cell ${lead.invalid ? 'invalid' : ''}">${escapeHtml(lead.text)}</td>`;
         return `
           <tr class="${rowClass}" data-id="${escapeHtml(t.id)}">
             <td class="item-cell"><input class="item-input" data-field="item" value="${escapeHtml(t.item)}" /></td>
             <td class="closed-cell"><input type="checkbox" data-field="is_closed" title="勾選結案" ${t.is_closed ? 'checked' : ''}></td>
-            ${TEAM_DEFS.map(team => teamCells(t, team)).join('')}
-            <td class="lead-cell ${lead.invalid ? 'invalid' : ''}">${escapeHtml(lead.text)}</td>
+            ${teamHtml}
+            ${totalLeadHtml}
             <td class="notes-cell"><input class="notes-input" data-field="notes" placeholder="可填寫進度、風險、卡關原因..." value="${escapeHtml(t.notes)}" /></td>
             <td class="action-cell">
               <button class="mini-btn" data-action="insert-after">＋下方列</button>
@@ -1101,7 +1851,7 @@
     function segmentsForTask(t, mode) {
       const teams = getTeamSegments(t).filter(s => s.valid && s.checked);
       if (mode === 'overall') {
-        const overall = getOverallRange(t);
+        const overall = getDisplayOverallRange(t);
         const startObj = parseISODate(overall.start);
         const endObj = parseISODate(overall.end);
         return startObj && endObj && endObj >= startObj ? [{
@@ -1126,6 +1876,7 @@
       const maxEnd = new Date(Math.max(...allSegments.map(s => s.endObj.getTime())));
       const totalDays = diffDaysInclusive(minStart, maxEnd);
       gantt.style.setProperty('--days', String(totalDays));
+      gantt.style.setProperty('--timeline-width', `calc(${totalDays} * var(--dayw))`);
 
       const ticks = [];
       const months = [];
@@ -1153,19 +1904,27 @@
         }).join('');
         const noteTitle = t.notes ? `｜備註：${t.notes}` : '';
         return `
-          <div class="gantt-row ${t.is_section ? 'section' : ''} ${t.is_closed ? 'closed' : ''}">
-            <div class="gantt-label" title="${escapeHtml(t.item + noteTitle)}">${t.is_closed ? '✓ ' : ''}${escapeHtml(t.item)}</div>
-            <div class="timeline" style="height:${rowHeight}px;">${bars}</div>
-          </div>
+          <tr class="${t.is_section ? 'section' : ''} ${t.is_closed ? 'closed' : ''}">
+            <th scope="row" class="gantt-label-cell" title="${escapeHtml(t.item + noteTitle)}">${t.is_closed ? '✓ ' : ''}${escapeHtml(t.item)}</th>
+            <td class="gantt-timeline-cell"><div class="timeline" style="height:${rowHeight}px;">${bars}</div></td>
+          </tr>
         `;
       }).join('');
 
       gantt.innerHTML = `
-        <div class="gantt-head">
-          <div class="gantt-label">項目</div>
-          <div class="scale">${ticks.join('')}${months.join('')}</div>
-        </div>
-        ${rows}
+        <table class="gantt-table" aria-label="專案甘特圖">
+          <colgroup>
+            <col class="gantt-label-col">
+            <col class="gantt-timeline-col">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="gantt-label-cell">項目</th>
+              <th class="gantt-scale-cell"><div class="scale">${ticks.join('')}${months.join('')}</div></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
       `;
     }
 
@@ -1173,6 +1932,7 @@
       tasks = sortTasks(tasks);
       renderTable();
       renderGantt();
+      renderTodayAgenda();
       renderCalendar();
     }
 
@@ -1201,7 +1961,7 @@
 
     function refreshOverallDates() {
       tasks.forEach(t => {
-        const overall = getOverallRange(t);
+        const overall = getDisplayOverallRange(t);
         t.start_date = overall.start || '';
         t.end_date = overall.end || '';
       });
@@ -1256,7 +2016,7 @@
 
     function taskPayloadForDb(t, idx = 0) {
       const normalized = normalizeTask(t, idx);
-      const overall = getOverallRange(normalized);
+      const overall = normalized.is_section ? getSectionSummary(t).overall : getOverallRange(normalized);
       return {
         id: normalized.id,
         seq: normalized.seq,
@@ -1590,17 +2350,19 @@
     function taskCalendarEvents() {
       const events = [];
       tasks.forEach(t => {
+        // 階段列僅供 WBS / 甘特圖彙總，不顯示在日曆。
+        if (t.is_section) return;
         TEAM_DEFS.forEach(team => {
-          if (!t[team.ownerField]) return;
+          const teamInfo = getEffectiveTeamSummary(t, team);
+          if (!teamInfo.owner) return;
           const baseClasses = [
             'calendar-task-event',
             `calendar-${team.className}`,
-            t.is_closed ? 'closed-event' : '',
-            t.is_section ? 'calendar-section-event' : ''
+            t.is_closed ? 'closed-event' : ''
           ].filter(Boolean);
 
-          const startDate = cleanDate(t[team.startField]);
-          const endDate = cleanDate(t[team.endField]);
+          const startDate = cleanDate(teamInfo.start);
+          const endDate = cleanDate(teamInfo.end);
           if (parseISODate(startDate)) {
             events.push({
               id: `task-start-${team.key}-${t.id}`,
@@ -1632,6 +2394,65 @@
         });
       });
       return events;
+    }
+
+    function formatTodayDisplay(date) {
+      return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    function getTodayAgendaItems(dateStr) {
+      const items = [];
+      tasks.forEach(t => {
+        // 與日曆一致：不納入階段列的自動彙總 start / end。
+        if (t.is_section) return;
+        TEAM_DEFS.forEach((team, teamOrder) => {
+          const info = getEffectiveTeamSummary(t, team);
+          if (!info.owner) return;
+          if (cleanDate(info.start) === dateStr) {
+            items.push({
+              kind: 'task', team: team.label, teamClass: team.className,
+              text: `${t.item} start`, seq: Number(t.seq) || 0, teamOrder, pointOrder: 0
+            });
+          }
+          if (cleanDate(info.end) === dateStr) {
+            items.push({
+              kind: 'task', team: team.label, teamClass: team.className,
+              text: `${t.item} end`, seq: Number(t.seq) || 0, teamOrder, pointOrder: 1
+            });
+          }
+        });
+      });
+      reminders.forEach((r, index) => {
+        if (cleanDate(r.reminder_date) !== dateStr) return;
+        items.push({
+          kind: 'reminder', team: '提醒', teamClass: 'reminder',
+          text: r.title, seq: 999999, teamOrder: 99, pointOrder: index
+        });
+      });
+      const holidayName = TAIWAN_NATIONAL_HOLIDAYS[dateStr];
+      if (holidayName) {
+        items.push({
+          kind: 'holiday', team: '國定假日', teamClass: 'reminder',
+          text: holidayName, seq: 999998, teamOrder: 98, pointOrder: 0
+        });
+      }
+      return items.sort((a, b) =>
+        a.seq - b.seq || a.teamOrder - b.teamOrder || a.pointOrder - b.pointOrder || a.text.localeCompare(b.text)
+      );
+    }
+
+    function renderTodayAgenda() {
+      if (!todayAgendaEl) return;
+      const now = new Date();
+      const dateStr = toISODate(now);
+      const items = getTodayAgendaItems(dateStr);
+      const itemHtml = items.length
+        ? items.map(item => `<span class="today-agenda-item ${escapeHtml(item.teamClass)}"><strong>${escapeHtml(item.team)}：</strong>&nbsp;${escapeHtml(item.text)}</span>`).join('')
+        : '<span class="today-agenda-empty">今天沒有日曆任務。</span>';
+      todayAgendaEl.innerHTML = `
+        <div class="today-agenda-date">今天是 ${escapeHtml(formatTodayDisplay(now))}</div>
+        <div class="today-agenda-list">${itemHtml}</div>
+      `;
     }
 
     function reminderCalendarEvents() {
@@ -1707,9 +2528,54 @@
       }
     }
 
+    function getTaiwanNationalHolidayName(value) {
+      const date = value instanceof Date ? value : parseISODate(value);
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+      return TAIWAN_NATIONAL_HOLIDAYS[toISODate(date)] || '';
+    }
+
+    function isTaiwanNationalHoliday(value) {
+      return Boolean(getTaiwanNationalHolidayName(value));
+    }
+
+    function isWeekend(value) {
+      const date = value instanceof Date ? value : parseISODate(value);
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return false;
+      return date.getDay() === 0 || date.getDay() === 6;
+    }
+
+    function isCalendarHoliday(value) {
+      return isWeekend(value) || isTaiwanNationalHoliday(value);
+    }
+
+    function mountNationalHolidayLabel(info) {
+      const holidayName = getTaiwanNationalHolidayName(info.date);
+      if (!holidayName) return;
+      info.el.classList.add('calendar-national-holiday-cell');
+      const frame = info.el.querySelector('.fc-daygrid-day-frame');
+      if (!frame || frame.querySelector('.calendar-national-holiday-name')) return;
+      const label = document.createElement('div');
+      label.className = 'calendar-national-holiday-name';
+      label.textContent = holidayName;
+      label.title = holidayName;
+      frame.appendChild(label);
+    }
+
     function mountInlineReminderInput(info) {
       const frame = info.el.querySelector('.fc-daygrid-day-frame');
       if (!frame || frame.querySelector('.calendar-inline-add')) return;
+
+      // FullCalendar 的 dayCellDidMount 沒有固定提供 dateStr，改由 Date 或 data-date 取得日期。
+      const dateStr = info.date instanceof Date
+        ? toISODate(info.date)
+        : String(info.el.getAttribute('data-date') || '');
+      if (!parseISODate(dateStr)) return;
+
+      // 週六、週日與國定假日均為唯讀，不建立自由新增輸入框。
+      if (isCalendarHoliday(info.date || dateStr)) {
+        info.el.classList.add('calendar-holiday-cell');
+        return;
+      }
 
       const wrap = document.createElement('div');
       wrap.className = 'calendar-inline-add';
@@ -1717,13 +2583,25 @@
       input.type = 'text';
       input.maxLength = 500;
       input.placeholder = '新增項目';
-      input.setAttribute('aria-label', `${info.dateStr} 新增項目`);
+      input.setAttribute('aria-label', `${dateStr} 新增項目`);
       input.addEventListener('click', (e) => e.stopPropagation());
+
+      let composing = false;
+      input.addEventListener('compositionstart', () => { composing = true; });
+      input.addEventListener('compositionend', () => { composing = false; });
       input.addEventListener('keydown', async (e) => {
-        if (e.key !== 'Enter' || e.isComposing) return;
+        if (e.key !== 'Enter') return;
         e.preventDefault();
         e.stopPropagation();
-        await createInlineReminder(info.dateStr, input.value, input);
+
+        // 中文輸入法按 Enter 時，keydown 可能早於文字完成，稍候再讀取 input.value。
+        if (composing || e.isComposing || e.keyCode === 229) {
+          window.setTimeout(() => {
+            createInlineReminder(dateStr, input.value, input);
+          }, 40);
+          return;
+        }
+        await createInlineReminder(dateStr, input.value, input);
       });
       wrap.appendChild(input);
       frame.appendChild(wrap);
@@ -1758,12 +2636,54 @@
           right: ''
         },
         buttonText: { today: '今天' },
+        dayCellClassNames(info) {
+          const classes = [];
+          if (isCalendarHoliday(info.date)) classes.push('calendar-holiday-cell');
+          if (isTaiwanNationalHoliday(info.date)) classes.push('calendar-national-holiday-cell');
+          return classes;
+        },
+        dayHeaderClassNames(info) {
+          return isWeekend(info.date) ? ['calendar-holiday-header'] : [];
+        },
         dateClick(info) {
+          if (isCalendarHoliday(info.date)) return;
           const input = info.dayEl?.querySelector('.calendar-inline-add input');
           if (input) input.focus();
         },
         dayCellDidMount(info) {
+          mountNationalHolidayLabel(info);
           mountInlineReminderInput(info);
+        },
+        datesSet() {
+          window.setTimeout(() => calendar?.updateSize(), 0);
+        },
+        eventContent(info) {
+          const p = info.event.extendedProps || {};
+          if (p.kind !== 'reminder') return { html: escapeHtml(info.event.title) };
+
+          const wrap = document.createElement('span');
+          wrap.className = 'calendar-reminder-content';
+          const label = document.createElement('span');
+          label.className = 'calendar-reminder-text';
+          label.textContent = info.event.title;
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'calendar-reminder-delete';
+          removeBtn.textContent = '×';
+          removeBtn.title = '刪除此項目';
+          ['pointerdown', 'mousedown'].forEach(type => {
+            removeBtn.addEventListener(type, e => {
+              e.preventDefault();
+              e.stopPropagation();
+            });
+          });
+          removeBtn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            deleteReminder(p.reminderId);
+          });
+          wrap.append(label, removeBtn);
+          return { domNodes: [wrap] };
         },
         eventClick(info) {
           const p = info.event.extendedProps || {};
@@ -1805,10 +2725,12 @@ ${p.notes}` : ''}`;
     }
 
     function renderCalendar() {
+      renderTodayAgenda();
       initCalendar();
       if (!calendar) return;
       calendar.removeAllEvents();
       calendar.addEventSource([...taskCalendarEvents(), ...reminderCalendarEvents()]);
+      window.setTimeout(() => calendar?.updateSize(), 0);
     }
 
     function resetReminderForm() {
@@ -1935,6 +2857,16 @@ ${p.notes}` : ''}`;
       }
     }
 
+    document.getElementById('exportCommentsBtn').addEventListener('click', exportCommentsCsv);
+    document.getElementById('exportCalendarCsvBtn').addEventListener('click', exportCalendarCsv);
+    document.getElementById('exportCalendarPngBtn').addEventListener('click', (e) => {
+      exportElementPng(document.getElementById('calendar'), `uO-PTI_P8_日曆_${fileTimestamp()}.png`, e.currentTarget);
+    });
+    document.getElementById('exportGanttPngBtn').addEventListener('click', (e) => {
+      exportElementPng(document.getElementById('gantt'), `uO-PTI_P8_甘特圖_${fileTimestamp()}.png`, e.currentTarget);
+    });
+    document.getElementById('exportWbsBtn').addEventListener('click', exportWbsCsv);
+
     document.getElementById('addCommentRowBtn').addEventListener('click', () => addCommentRow());
 
     commentTbody.addEventListener('change', (e) => {
@@ -1996,6 +2928,7 @@ ${p.notes}` : ''}`;
       if (!task) return;
       const field = e.target.dataset.field;
       if (!field) return;
+      if (task.is_section && (field === 'pm_fae' || field === 'owner_system' || field === 'owner_data' || field === 'owner_model' || field.endsWith('_date'))) return;
       task[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
       refreshOverallDates();
       renderAll();
