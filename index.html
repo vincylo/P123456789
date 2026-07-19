@@ -1723,6 +1723,59 @@
       cursor: pointer;
     }
 
+    .calendar-event-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .calendar-event-icons {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex: 0 0 auto;
+    }
+    .calendar-event-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid currentColor;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 900;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    .calendar-event-icon.start {
+      color: #15803d;
+      background: #ecfdf5;
+    }
+    .calendar-event-icon.end {
+      color: #dc2626;
+      background: #fef2f2;
+    }
+    .calendar-event-icon.deadline {
+      color: #c2410c;
+      background: #fff7ed;
+      font-size: 8px;
+    }
+    .calendar-event-icon.all-pin {
+      width: auto;
+      min-width: 14px;
+      border: 0;
+      background: transparent;
+      font-size: 12px;
+    }
+    .calendar-event-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* v29：甘特圖 Redmine 超連結保留原項目文字樣式，不顯示藍色與底線。 */
     .gantt-redmine-link {
@@ -1895,20 +1948,31 @@
     }
 
     .today-agenda-point.start {
-      color: #047857;
+      color: #15803d;
       background: #ecfdf5;
+      font-size: 13px;
     }
 
     .today-agenda-point.end {
-      color: #c2410c;
-      background: #fff7ed;
-      font-size: 14px;
+      color: #dc2626;
+      background: #fef2f2;
+      font-size: 13px;
       line-height: 1;
     }
 
     .today-agenda-point.deadline {
-      color: #b91c1c;
-      background: #fef2f2;
+      color: #c2410c;
+      background: #fff7ed;
+      font-size: 10px;
+    }
+
+    .today-agenda-point.all-pin {
+      width: auto;
+      min-width: 20px;
+      padding: 0 3px;
+      border: 0;
+      background: transparent;
+      font-size: 16px;
     }
 
     .today-agenda-point.reminder {
@@ -3625,10 +3689,31 @@
 
           const startDate = cleanDate(teamInfo.start);
           const endDate = cleanDate(teamInfo.end);
-          if (parseISODate(startDate)) {
+          const hasStart = !!parseISODate(startDate);
+          const hasEnd = !!parseISODate(endDate);
+
+          if (hasStart && hasEnd && startDate === endDate) {
+            events.push({
+              id: `task-both-${team.key}-${t.id}`,
+              title: t.item,
+              start: startDate,
+              allDay: true,
+              ...(taskRedmineUrl ? { url: taskRedmineUrl } : {}),
+              classNames: [...baseClasses, 'calendar-start-event', 'calendar-end-event'],
+              extendedProps: {
+                kind: 'task-point', taskId: t.id, teamLabel: team.label,
+                taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 0,
+                pointType: 'start', pointTypes: ['start', 'end'], pointDate: startDate, notes: t.notes || '',
+                redmineNo: taskIssueNo, redmineUrl: taskRedmineUrl
+              }
+            });
+            return;
+          }
+
+          if (hasStart) {
             events.push({
               id: `task-start-${team.key}-${t.id}`,
-              title: `${team.label} ${t.item} start`,
+              title: t.item,
               start: startDate,
               allDay: true,
               ...(taskRedmineUrl ? { url: taskRedmineUrl } : {}),
@@ -3636,15 +3721,15 @@
               extendedProps: {
                 kind: 'task-point', taskId: t.id, teamLabel: team.label,
                 taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 0,
-                pointType: 'start', pointDate: startDate, notes: t.notes || '',
+                pointType: 'start', pointTypes: ['start'], pointDate: startDate, notes: t.notes || '',
                 redmineNo: taskIssueNo, redmineUrl: taskRedmineUrl
               }
             });
           }
-          if (parseISODate(endDate)) {
+          if (hasEnd) {
             events.push({
               id: `task-end-${team.key}-${t.id}`,
-              title: `${team.label} ${t.item} end`,
+              title: t.item,
               start: endDate,
               allDay: true,
               ...(taskRedmineUrl ? { url: taskRedmineUrl } : {}),
@@ -3652,7 +3737,7 @@
               extendedProps: {
                 kind: 'task-point', taskId: t.id, teamLabel: team.label,
                 taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 1,
-                pointType: 'end', pointDate: endDate, notes: t.notes || '',
+                pointType: 'end', pointTypes: ['end'], pointDate: endDate, notes: t.notes || '',
                 redmineNo: taskIssueNo, redmineUrl: taskRedmineUrl
               }
             });
@@ -3794,13 +3879,13 @@
       return [...groups.values()].sort((a, b) => a.teamOrder - b.teamOrder);
     }
 
-    // v33：聊天室純文字無法保留 CSS 顏色，因此複製內容改用彩色 Emoji 圖示。
-    // 🟢＝開始、🔴＝結束、🟣＝同日開始與結束、⏰＝AR 截止。
+    // v36：日曆、今日任務與複製訊息統一使用箭頭／圖釘圖示。
     function todayAgendaSymbol(item) {
       const types = item.pointTypes || [item.pointType];
-      if (types.includes('start') && types.includes('end')) return '🟣';
-      if (types.includes('start')) return '🟢';
-      if (types.includes('end')) return '🔴';
+      if (item.kind === 'ar-deadline' && item.groupKey === TODAY_AGENDA_ALL_GROUP.key) return '📌';
+      if (types.includes('start') && types.includes('end')) return '🟢➡️ 🔴⬅️';
+      if (types.includes('start')) return '🟢➡️';
+      if (types.includes('end')) return '🔴⬅️';
       if (types.includes('deadline')) return '⏰';
       if (types.includes('reminder')) return '🔔';
       if (types.includes('holiday')) return '🟡';
@@ -3814,7 +3899,7 @@
       const lines = [
         `今天是 ${formatTodayDisplay(date)}`,
         '各組任務如下：',
-        '🟢 開始｜🔴 結束｜🟣 同日開始與結束｜⏰ AR 截止',
+        '🟢➡️ 開始｜🔴⬅️ 結束｜🟢➡️ 🔴⬅️ 同日開始與結束｜📌 ALL｜⏰ AR 截止',
         ''
       ];
 
@@ -3897,14 +3982,17 @@
       const groups = getTodayAgendaGroups(dateStr);
 
       const pointBadgeHtml = item => {
+        if (item.kind === 'ar-deadline' && item.groupKey === TODAY_AGENDA_ALL_GROUP.key) {
+          return '<span class="today-agenda-point all-pin" title="ALL" aria-label="ALL">📌</span>';
+        }
         const labels = {
-          start: ['▶', '開始'],
-          end: ['■', '結束'],
+          start: ['➜', '開始'],
+          end: ['⬅', '結束'],
           deadline: ['限', 'AR 截止'],
           reminder: ['提', '提醒'],
           holiday: ['休', '國定假日']
         };
-        return item.pointTypes.map(type => {
+        return (item.pointTypes || [item.pointType]).map(type => {
           const [mark, title] = labels[type] || ['', ''];
           return `<span class="today-agenda-point ${escapeHtml(type)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">${escapeHtml(mark)}</span>`;
         }).join('');
@@ -3967,7 +4055,7 @@
 
         return [{
           id: `ar-deadline-${comment.id}`,
-          title: `AR${issueNo ? ` #${issueNo}` : ` ${index + 1}`} 截止 ${shortSummary}`,
+          title: `${issueNo ? `#${issueNo} ` : ''}${shortSummary}`,
           start: deadline,
           allDay: true,
           ...(issueUrl ? { url: issueUrl } : {}),
@@ -4197,10 +4285,37 @@
         eventContent(info) {
           const p = info.event.extendedProps || {};
           if (p.kind !== 'reminder') {
+            const wrap = document.createElement('span');
+            wrap.className = 'calendar-event-wrap';
+            const icons = document.createElement('span');
+            icons.className = 'calendar-event-icons';
+
+            const addIcon = (className, text, title) => {
+              const el = document.createElement('span');
+              el.className = `calendar-event-icon ${className}`;
+              el.textContent = text;
+              el.title = title;
+              el.setAttribute('aria-label', title);
+              icons.appendChild(el);
+            };
+
+            if (p.kind === 'task-point') {
+              const types = p.pointTypes || [p.pointType];
+              if (types.includes('start')) addIcon('start', '➜', '開始');
+              if (types.includes('end')) addIcon('end', '⬅', '結束');
+            } else if (p.kind === 'ar-deadline') {
+              if (String(p.audience || '').trim().toUpperCase() === 'ALL') {
+                addIcon('all-pin', '📌', 'ALL');
+              } else {
+                addIcon('deadline', '限', 'AR 截止');
+              }
+            }
+
             const label = document.createElement('span');
             label.className = 'calendar-event-label';
             label.textContent = info.event.title;
-            return { domNodes: [label] };
+            wrap.append(icons, label);
+            return { domNodes: [wrap] };
           }
 
           const wrap = document.createElement('span');
