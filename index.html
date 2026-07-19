@@ -3879,13 +3879,13 @@
       return [...groups.values()].sort((a, b) => a.teamOrder - b.teamOrder);
     }
 
-    // v36：日曆、今日任務與複製訊息統一使用箭頭／圖釘圖示。
+    // v37：複製訊息使用 🌱／🌷；網頁上的日曆與今日任務維持箭頭圖示。
     function todayAgendaSymbol(item) {
       const types = item.pointTypes || [item.pointType];
       if (item.kind === 'ar-deadline' && item.groupKey === TODAY_AGENDA_ALL_GROUP.key) return '📌';
-      if (types.includes('start') && types.includes('end')) return '🟢➡️ 🔴⬅️';
-      if (types.includes('start')) return '🟢➡️';
-      if (types.includes('end')) return '🔴⬅️';
+      if (types.includes('start') && types.includes('end')) return '🌱 🌷';
+      if (types.includes('start')) return '🌱';
+      if (types.includes('end')) return '🌷';
       if (types.includes('deadline')) return '⏰';
       if (types.includes('reminder')) return '🔔';
       if (types.includes('holiday')) return '🟡';
@@ -3899,7 +3899,7 @@
       const lines = [
         `今天是 ${formatTodayDisplay(date)}`,
         '各組任務如下：',
-        '🟢➡️ 開始｜🔴⬅️ 結束｜🟢➡️ 🔴⬅️ 同日開始與結束｜📌 ALL｜⏰ AR 截止',
+        '🌱 開始｜🌷 結束｜🌱 🌷 同日開始與結束｜📌 ALL｜⏰ AR 截止',
         ''
       ];
 
