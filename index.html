@@ -631,7 +631,10 @@
     }
 
 
-    /* v11：uO-PTI P8、表格式留言板、月曆起訖點 */
+    /* v26：AR 截止日、精簡欄寬、WBS Redmine。 */
+    /* v25：狀態改為貼合文字的方形標籤、編號改稱序號，移除列內插入功能。 */
+    /* v24：AR List 新增列改為最下方，並壓縮非內容欄寬。 */
+    /* v23：AR List（流水號、Redmine、狀態、發起人、對象、需求、回覆與日期） */
     .header-line {
       display: flex;
       align-items: center;
@@ -642,62 +645,223 @@
     .panel-title-actions {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 8px;
       flex-wrap: wrap;
     }
 
+    .ar-filter-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 30px;
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: #475569;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .ar-filter-label input { width: 14px; height: 14px; margin: 0; }
+
     .comment-table-wrap {
       overflow: auto;
-      max-height: 310px;
-      min-height: 130px;
+      max-height: 390px;
+      min-height: 165px;
       padding: 8px;
+      background: #fff;
     }
 
     #commentTable {
       width: 100%;
-      min-width: 920px;
+      min-width: 1200px;
       zoom: 1;
       font-size: 12px;
       table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
     }
 
     #commentTable th,
     #commentTable td {
-      border: 1px solid #94a3b8;
-      padding: 4px;
+      border-right: 1px solid #94a3b8;
+      border-bottom: 1px solid #94a3b8;
+      padding: 5px;
       vertical-align: top;
+      background: #fff;
     }
+    #commentTable tr > *:first-child { border-left: 1px solid #94a3b8; }
+    #commentTable thead tr:first-child > * { border-top: 1px solid #94a3b8; }
 
     #commentTable thead th {
       position: sticky;
       top: 0;
-      z-index: 2;
+      z-index: 6;
       background: #d6e1f4;
-      font-size: 12px;
+      color: #1e293b;
+      font-size: 11px;
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
-    #commentTable .comment-author-col { width: 120px; }
-    #commentTable .comment-target-col { width: 120px; }
-    #commentTable .comment-content-col { width: 34%; }
-    #commentTable .comment-reply-col { width: 34%; }
-    #commentTable .comment-action-col { width: 60px; text-align: center; }
+    /* v24：識別與操作欄貼近文字寬度，主要空間留給需求與回覆。 */
+    #commentTable .ar-no-col { width: 42px; }
+    #commentTable .ar-redmine-col { width: 76px; }
+    #commentTable .ar-status-col { width: 78px; }
+    #commentTable .comment-author-col { width: 76px; }
+    #commentTable .comment-target-col { width: 66px; }
+    #commentTable .comment-content-col { width: 340px; }
+    #commentTable .comment-reply-col { width: 340px; }
+    #commentTable .ar-date-col { width: 104px; }
+    #commentTable .comment-action-col { width: 82px; text-align: center; }
 
+    #commentTable th:nth-child(-n+5),
+    #commentTable td:nth-child(-n+5),
+    #commentTable th:nth-child(8),
+    #commentTable td:nth-child(8),
+    #commentTable th:nth-child(9),
+    #commentTable td:nth-child(9) {
+      padding-left: 3px;
+      padding-right: 3px;
+    }
+
+    #commentTable td:nth-child(2),
+    #commentTable td:nth-child(3),
+    #commentTable td:nth-child(4),
+    #commentTable td:nth-child(5),
+    #commentTable td:nth-child(8),
+    #commentTable td:nth-child(9) {
+      vertical-align: middle;
+      text-align: center;
+    }
+
+    #commentTable td:nth-child(3) select,
+    #commentTable td:nth-child(4) select,
+    #commentTable td:nth-child(5) select {
+      padding-left: 2px;
+      padding-right: 2px;
+      font-size: 10px;
+    }
+    #commentTable td:nth-child(3) select {
+      height: 24px;
+      padding-top: 1px;
+      padding-bottom: 1px;
+      font-size: 9px;
+    }
+
+    #commentTable input[type="text"],
     #commentTable select,
     #commentTable textarea {
       width: 100%;
+      min-width: 0;
       border: 1px solid #cbd5e1;
-      border-radius: 5px;
+      border-radius: 6px;
       background: #fff;
       color: var(--text);
       padding: 5px 6px;
       font: inherit;
+      font-size: 11px;
+      outline: none;
+    }
+    #commentTable input[type="text"]:focus,
+    #commentTable select:focus,
+    #commentTable textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,.12);
+    }
+    #commentTable textarea {
+      min-height: 72px;
+      resize: vertical;
+      line-height: 1.5;
     }
 
-    #commentTable textarea {
-      min-height: 54px;
-      resize: vertical;
-      line-height: 1.45;
+    .ar-no-cell {
+      text-align: center;
+      vertical-align: middle !important;
+      color: #475569;
+      font-weight: 700;
     }
+    .ar-view-text {
+      min-height: 44px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.5;
+      color: #334155;
+    }
+    .ar-view-empty { color: #94a3b8; }
+    .ar-redmine-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: #1d4ed8;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      word-break: break-all;
+    }
+    .ar-redmine-input { text-align: center; }
+
+    .ar-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      min-width: 0;
+      min-height: 18px;
+      padding: 1px 4px;
+      border: 1px solid currentColor;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .ar-status-todo { background: #e2e8f0; color: #334155; }
+    .ar-status-progress { background: #dbeafe; color: #1d4ed8; }
+    .ar-status-review { background: #f3e8ff; color: #7e22ce; }
+    .ar-status-done { background: #dcfce7; color: #166534; }
+
+    .ar-date-stack {
+      display: grid;
+      gap: 3px;
+      color: #64748b;
+      font-size: 9px;
+      line-height: 1.3;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .ar-date-stack strong { color: #334155; font-weight: 700; }
+
+    .ar-action-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .ar-action-buttons .mini-btn {
+      margin: 0;
+      padding: 2px 4px;
+      font-size: 9px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .ar-action-buttons .save-btn {
+      color: #fff;
+      background: #1f4e8c;
+      border-color: #1f4e8c;
+    }
+
+    #commentTable tr.ar-row-done td {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+    #commentTable tr.ar-row-done .ar-view-text { color: #64748b; }
+    #commentTable tr.ar-row-editing td { background: #fffbeb; }
 
     .calendar-side .form-row { grid-template-columns: 1fr; }
     .calendar-side .form-field textarea { min-height: 82px; }
@@ -969,16 +1133,27 @@
       isolation: isolate;
       background: #ffffff;
     }
+    /* v22：甘特圖欄寬不再跟篩選後資料量一起縮放。
+       項目欄固定寬度，日期區使用完整專案時間軸，避免只剩少量資料時被推到右側。 */
     .gantt-table {
       border-collapse: separate;
       border-spacing: 0;
       table-layout: fixed;
       width: calc(var(--gantt-label-w) + var(--timeline-width));
-      min-width: 100%;
+      min-width: calc(var(--gantt-label-w) + var(--timeline-width));
+      max-width: calc(var(--gantt-label-w) + var(--timeline-width));
       background: #ffffff;
     }
-    .gantt-table .gantt-label-col { width: var(--gantt-label-w); }
-    .gantt-table .gantt-timeline-col { width: var(--timeline-width); }
+    .gantt-table .gantt-label-col {
+      width: var(--gantt-label-w);
+      min-width: var(--gantt-label-w);
+      max-width: var(--gantt-label-w);
+    }
+    .gantt-table .gantt-timeline-col {
+      width: var(--timeline-width);
+      min-width: var(--timeline-width);
+      max-width: var(--timeline-width);
+    }
     .gantt-table th,
     .gantt-table td {
       padding: 0;
@@ -1187,6 +1362,340 @@
       pointer-events: none;
     }
 
+    /* AR List 的 Redmine 連結為內網網址，須在可連線 192.168.1.177 的網路環境中開啟。 */
+
+    /* v26：AR 截止日、精簡欄寬，以及 WBS Redmine 欄位。 */
+    #commentTable {
+      min-width: 1020px;
+    }
+
+    /* 固定精簡欄位寬度，剩餘空間只分配給「需求內容／進度回覆」。 */
+    #commentTable .ar-no-col { width: 40px !important; }
+    #commentTable .ar-redmine-col { width: 68px !important; }
+    #commentTable .ar-status-col { width: 64px !important; }
+    #commentTable .comment-author-col { width: 66px !important; }
+    #commentTable .comment-target-col { width: 52px !important; }
+    #commentTable .comment-content-col,
+    #commentTable .comment-reply-col { width: auto !important; }
+    #commentTable .ar-date-col { width: 112px !important; }
+    #commentTable .comment-action-col { width: 68px !important; }
+
+    #commentTable th,
+    #commentTable td {
+      padding-left: 3px;
+      padding-right: 3px;
+    }
+
+    #commentTable td:nth-child(4) .ar-view-text,
+    #commentTable td:nth-child(5) .ar-view-text {
+      min-height: 0;
+      white-space: nowrap;
+      text-align: center;
+      font-size: 10px;
+    }
+
+    #commentTable td:nth-child(3) select {
+      width: 58px;
+      height: 22px;
+      padding: 1px;
+      font-size: 9px;
+    }
+
+    #commentTable td:nth-child(4) select { width: 60px; }
+    #commentTable td:nth-child(5) select { width: 46px; }
+
+    .ar-date-stack {
+      gap: 2px;
+      font-size: 9px;
+    }
+
+    .ar-deadline-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 3px;
+      margin-top: 2px;
+      padding-top: 3px;
+      border-top: 1px dashed #cbd5e1;
+    }
+
+    .ar-deadline-row strong {
+      color: #9a3412;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    #commentTable .ar-deadline-input {
+      width: 88px;
+      min-width: 88px;
+      max-width: 88px;
+      height: 22px;
+      padding: 1px 2px;
+      border: 1px solid #fdba74;
+      border-radius: 4px;
+      background: #fff7ed;
+      color: #c2410c;
+      font-size: 9px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    #commentTable .ar-deadline-input:focus {
+      border-color: #ea580c;
+      box-shadow: 0 0 0 2px rgba(234,88,12,.12);
+    }
+
+    #commentTable .ar-deadline-input.ar-deadline-overdue {
+      border-color: #f87171;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    #commentTable .ar-deadline-input.ar-deadline-done {
+      border-color: #6ee7b7;
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    #commentTable .ar-deadline-input.ar-deadline-empty {
+      color: #9a3412;
+      font-weight: 500;
+    }
+
+    /* WBS：Redmine 固定在最左側，項目欄固定在其右側。 */
+    #taskTable {
+      --wbs-redmine-w: 82px;
+      --wbs-item-w: 210px;
+      min-width: 1402px;
+    }
+
+    #taskTable thead tr:first-child th:first-child {
+      position: sticky !important;
+      left: 0 !important;
+      top: 0 !important;
+      z-index: 18 !important;
+      width: var(--wbs-redmine-w) !important;
+      min-width: var(--wbs-redmine-w) !important;
+      max-width: var(--wbs-redmine-w) !important;
+      background: var(--head) !important;
+      box-shadow: 1px 0 0 rgba(75,85,99,.45);
+    }
+
+    #taskTable thead tr:first-child th:nth-child(2) {
+      position: sticky !important;
+      left: var(--wbs-redmine-w) !important;
+      top: 0 !important;
+      z-index: 17 !important;
+      width: var(--wbs-item-w) !important;
+      min-width: var(--wbs-item-w) !important;
+      max-width: var(--wbs-item-w) !important;
+      background: var(--head) !important;
+      box-shadow: 2px 0 0 rgba(75,85,99,.45);
+    }
+
+    #taskTable td.wbs-redmine-cell {
+      position: sticky;
+      left: 0;
+      z-index: 6;
+      width: var(--wbs-redmine-w);
+      min-width: var(--wbs-redmine-w);
+      max-width: var(--wbs-redmine-w);
+      padding: 2px;
+      background: #fff;
+      text-align: center;
+      box-shadow: 1px 0 0 rgba(75,85,99,.25);
+    }
+
+    #taskTable td.item-cell {
+      left: var(--wbs-redmine-w);
+      width: var(--wbs-item-w);
+      min-width: var(--wbs-item-w);
+      max-width: var(--wbs-item-w);
+      z-index: 5;
+    }
+
+    #taskTable tbody tr.section-row td.wbs-redmine-cell {
+      background: var(--section);
+      z-index: 7;
+    }
+
+    #taskTable tbody tr:hover td.wbs-redmine-cell {
+      background-color: #fff7ed;
+    }
+
+    #taskTable tbody tr.section-row:hover td.wbs-redmine-cell {
+      background-color: #d7e2f3;
+    }
+
+    #taskTable tbody tr.closed-row td.wbs-redmine-cell {
+      background: #e5e7eb !important;
+      color: #6b7280;
+    }
+
+    .wbs-redmine-editor {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .wbs-redmine-input {
+      width: 56px;
+      min-width: 56px;
+      max-width: 56px;
+      height: 22px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 1px 3px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 9px;
+      text-align: center;
+      outline: none;
+    }
+
+    .wbs-redmine-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,.15);
+    }
+
+    .wbs-redmine-open {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 18px;
+      width: 18px;
+      height: 20px;
+      border: 1px solid #93c5fd;
+      border-radius: 4px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .wbs-redmine-open:hover {
+      background: #dbeafe;
+    }
+
+    .wbs-redmine-open.is-empty {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+
+    /* v27：修正 AR List 凍結表頭穿透、縮窄截止日，並將 AR 截止日及 Redmine 連結加入日曆。 */
+    .comment-table-wrap {
+      padding: 0 8px 8px !important;
+      position: relative;
+      isolation: isolate;
+      background: #ffffff;
+    }
+
+    #commentTable {
+      position: relative;
+      z-index: 1;
+    }
+
+    #commentTable thead {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    #commentTable thead tr {
+      position: relative;
+      z-index: 40;
+    }
+
+    #commentTable thead th {
+      top: 0 !important;
+      z-index: 41 !important;
+      background: #d6e1f4 !important;
+      background-clip: border-box !important;
+      box-shadow: 0 1px 0 #94a3b8;
+    }
+
+    #commentTable tbody {
+      position: relative;
+      z-index: 1;
+    }
+
+    .ar-deadline-row {
+      grid-template-columns: 22px 78px !important;
+      justify-content: center;
+      gap: 2px !important;
+    }
+
+    #commentTable .ar-deadline-input {
+      width: 78px !important;
+      min-width: 0 !important;
+      max-width: 78px !important;
+      box-sizing: border-box;
+      padding-left: 1px !important;
+      padding-right: 1px !important;
+      font-size: 8.5px !important;
+    }
+
+    .fc .calendar-ar-deadline-event {
+      background: #ea580c;
+      border-color: #ea580c;
+      font-weight: 700;
+    }
+
+    .fc .calendar-ar-deadline-event.ar-deadline-overdue-event {
+      background: #b91c1c;
+      border-color: #b91c1c;
+    }
+
+    .fc .calendar-ar-deadline-event.ar-deadline-done-event {
+      background: #047857;
+      border-color: #047857;
+      opacity: .78;
+    }
+
+    .fc .calendar-has-redmine .fc-event-main,
+    .fc .calendar-has-redmine .fc-event-title,
+    .fc .calendar-has-redmine .calendar-event-label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+
+    /* v29：甘特圖 Redmine 超連結保留原項目文字樣式，不顯示藍色與底線。 */
+    .gantt-redmine-link {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      text-decoration: none;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    .gantt-redmine-link:hover,
+    .gantt-redmine-link:focus,
+    .gantt-redmine-link:visited {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .gantt-table tbody tr.closed .gantt-redmine-link {
+      color: inherit;
+    }
+
+    .today-agenda-item.ar-deadline { border-left: 4px solid #ea580c; }
+    .today-agenda-item.ar-deadline-overdue { border-left: 4px solid #b91c1c; }
+    .today-agenda-item.ar-deadline-done { border-left: 4px solid #047857; }
+
   </style>
 </head>
 <body>
@@ -1204,10 +1713,14 @@
   <main>
     <section class="panel">
       <div class="panel-title">
-        <h2>留言板</h2>
+        <h2>AR List</h2>
         <div class="panel-title-actions">
+          <label class="ar-filter-label" title="預設隱藏狀態為 Done 的已結案項目">
+            <input type="checkbox" id="showDoneArCheckbox" />
+            顯示已結案
+          </label>
           <button class="export-btn" id="exportCommentsBtn">匯出 CSV</button>
-          <button class="primary" id="addCommentRowBtn">新增留言</button>
+          <button class="primary" id="addCommentRowBtn" title="新增在清單最下方，序號接續最後一筆">＋ 新增 AR</button>
           <span id="commentStatus" class="sub-status"></span>
         </div>
       </div>
@@ -1215,10 +1728,14 @@
         <table id="commentTable">
           <thead>
             <tr>
-              <th class="comment-author-col">留言人</th>
+              <th class="ar-no-col">序號</th>
+              <th class="ar-redmine-col">Redmine</th>
+              <th class="ar-status-col">狀態</th>
+              <th class="comment-author-col">發起人</th>
               <th class="comment-target-col">對象</th>
-              <th class="comment-content-col">內容</th>
-              <th class="comment-reply-col">回覆</th>
+              <th class="comment-content-col">需求內容</th>
+              <th class="comment-reply-col">進度回覆</th>
+              <th class="ar-date-col">日期</th>
               <th class="comment-action-col">操作</th>
             </tr>
           </thead>
@@ -1294,6 +1811,7 @@
         <table id="taskTable">
           <thead>
             <tr>
+              <th rowspan="2">Redmine</th>
               <th rowspan="2">項目</th>
               <th rowspan="2">結案</th>
               <th colspan="4">PM/FAE</th>
@@ -1317,8 +1835,8 @@
     </section>
 
     <p class="footer-note">
-      共編保存方式：若 config.js 已設定 Supabase，WBS、留言與提醒會儲存在雲端並即時同步；若未設定，資料只會保存在目前瀏覽器的 localStorage。<br>
-      v19 更新：WBS 工作天扣除週末及 2026 年台灣國定假日；日曆同步標示國定假日並設為唯讀。
+      共編保存方式：若 config.js 已設定 Supabase，WBS、AR List 與提醒會儲存在雲端並即時同步；若未設定，資料只會保存在目前瀏覽器的 localStorage。<br>
+      v25 更新：AR 新增列固定接在清單最下方；狀態改為貼合文字的方形標籤；「編號」改稱「序號」；移除列內插入功能。
     </p>
   </main>
 
@@ -1332,6 +1850,69 @@
 
     const COMMENT_AUTHORS = ['PM/FAE', 'SYSTEM', 'DATA', 'MODEL'];
     const COMMENT_TARGETS = ['ALL', ...COMMENT_AUTHORS];
+    const AR_STATUSES = ['To Do', 'In Progress', 'Review', 'Done'];
+    const REDMINE_BASE_URL = 'https://192.168.1.177:9099/issues/';
+
+    // 依「redmine 網址.xlsx」建立 WBS 預設對照；既有資料若尚未填 Redmine，
+    // 會依項目前方編號自動帶入，仍可在 WBS 表格中自行修改。
+    const WBS_REDMINE_BY_CODE = Object.freeze({
+      '0': '27905',
+      '0.4': '27932',
+      '1': '27903',
+      '1.1': '27933',
+      '1.2': '27934',
+      '1.3': '27935',
+      '1.4': '28307',
+      '2': '27902',
+      '2.1': '27936',
+      '3': '27898',
+      '3.1': '27937',
+      '3.2': '27938',
+      '3.3': '27939',
+      '3.4': '27940',
+      '3.5': '27941',
+      '3.6': '27942',
+      '3.7': '27943',
+      '3.8': '27944',
+      '3.9': '27945',
+      '3.10': '27946',
+      '3.11': '27947',
+      '3.12': '27948',
+      '3.13': '27949',
+      '4': '27890',
+      '4.1': '27951',
+      '4.2': '27952',
+      '4.3': '27953',
+      '4.4': '27954',
+      '4.5': '27955',
+      '4.6': '27956',
+      '4.7': '28167',
+      '5': '27897',
+      '5.1': '27957',
+      '5.2': '28168',
+      '5.3': '28169',
+      '6': '27896',
+      '6.1': '28170',
+      '6.2': '28171',
+      '6.3': '28172',
+      '7': '27892',
+      '7.1': '28359'
+    });
+
+    function wbsItemCode(item) {
+      const match = String(item || '').trim().match(/^(\d+(?:\.\d+)*)\.?\s*/);
+      return match ? match[1] : '';
+    }
+
+    function inferTaskRedmine(item) {
+      const title = String(item || '');
+      // 現行 WBS 的 3.10 之後編號與 Redmine 清單略有差異，先依名稱判斷。
+      if (/參數設定|UI\s*參數/i.test(title)) return '27946';
+      if (/Server\s*Monitor/i.test(title)) return '27947';
+      if (/前\s*N\s*順位|前N順位/i.test(title)) return '27948';
+      if (/整合測試/i.test(title)) return '27949';
+      return WBS_REDMINE_BY_CODE[wbsItemCode(title)] || '';
+    }
 
     // 依行政院人事行政總處 2026 年政府行政機關辦公日曆表。
     // WBS 工作天會扣除下列日期；日曆亦會標示並禁止新增自由項目。
@@ -1394,6 +1975,7 @@
     const REMINDERS_TABLE = cfg.REMINDERS_TABLE_NAME || 'project_reminders';
     const storageKey = 'project_gantt_tasks_v2';
     const commentsStorageKey = 'project_gantt_comments_v1';
+    const arShowDoneStorageKey = 'project_gantt_ar_show_done_v1';
     const remindersStorageKey = 'project_gantt_reminders_v1';
     const legacyStorageKey = 'project_gantt_tasks_v1';
     const ganttModeKey = 'project_gantt_view_mode_v3';
@@ -1411,12 +1993,17 @@
     let comments = [];
     let reminders = [];
     let calendar = null;
+    let showDoneAr = localStorage.getItem(arShowDoneStorageKey) === 'true';
+    const editingCommentIds = new Set();
+    const commentEditSnapshots = new Map();
 
     const tbody = document.querySelector('#taskTable tbody');
     const statusEl = document.getElementById('status');
     const ganttModeEl = document.getElementById('ganttMode');
     const commentTbody = document.querySelector('#commentTable tbody');
     const commentStatusEl = document.getElementById('commentStatus');
+    const showDoneArEl = document.getElementById('showDoneArCheckbox');
+    if (showDoneArEl) showDoneArEl.checked = showDoneAr;
     const reminderListEl = document.getElementById('reminderList');
     const reminderStatusEl = document.getElementById('reminderStatus');
     const todayAgendaEl = document.getElementById('todayAgenda');
@@ -1443,6 +2030,7 @@
         id: String(t.id || `task-${Date.now()}-${idx}`),
         seq: Number.isFinite(Number(t.seq)) ? Number(t.seq) : idx,
         item: t.item || '',
+        redmine_no: String(t.redmine_no || inferTaskRedmine(t.item)).replace(/\D/g, ''),
         is_section: Boolean(t.is_section),
         is_closed: Boolean(t.is_closed),
         pm_fae: Boolean(t.pm_fae),
@@ -1549,12 +2137,23 @@
     }
 
     function exportCommentsCsv() {
-      const rows = [...comments]
-        .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
-        .map(c => [c.author, c.audience, c.message, c.reply, formatDateTime(c.created_at), formatDateTime(c.updated_at)]);
+      const sorted = sortComments(comments);
+      const rows = sorted.map((c, index) => [
+        index + 1,
+        c.redmine_no,
+        redmineUrl(c.redmine_no),
+        c.status,
+        c.author,
+        c.audience,
+        c.message,
+        c.reply,
+        c.deadline_date,
+        formatDateTime(c.created_at),
+        formatDateTime(c.updated_at)
+      ]);
       downloadCsv(
-        `uO-PTI_P8_留言板_${fileTimestamp()}.csv`,
-        ['留言人', '對象', '內容', '回覆', '建立時間', '更新時間'],
+        `uO-PTI_P8_AR_List_${fileTimestamp()}.csv`,
+        ['序號', 'Redmine編號', 'Redmine連結', '狀態', '發起人', '對象', '需求內容', '進度回覆', '截止日期', '建立時間', '更新時間'],
         rows
       );
     }
@@ -1595,12 +2194,12 @@
     }
 
     function exportWbsCsv() {
-      const headers = ['項目', '結案'];
+      const headers = ['Redmine編號', 'Redmine連結', '項目', '結案'];
       TEAM_DEFS.forEach(team => headers.push(`${team.label} 負責`, `${team.label} start`, `${team.label} end`, `${team.label} LT工作天`));
       headers.push('總 LT / 工作天', '備註');
 
       const rows = tasks.map(t => {
-        const row = [t.item, t.is_closed ? '是' : '否'];
+        const row = [t.redmine_no || '', redmineUrl(t.redmine_no), t.item, t.is_closed ? '是' : '否'];
         TEAM_DEFS.forEach(team => {
           const teamInfo = getEffectiveTeamSummary(t, team);
           row.push(
@@ -1826,8 +2425,31 @@
                <small>工作天: ${escapeHtml(sectionSummary.summedLead ? String(sectionSummary.summedLead) : '—')}</small>
              </td>`
           : `<td class="lead-cell ${lead.invalid ? 'invalid' : ''}">${escapeHtml(lead.text)}</td>`;
+        const wbsIssueNo = String(t.redmine_no || '').replace(/\D/g, '');
+        const wbsRedmineHref = redmineUrl(wbsIssueNo);
         return `
           <tr class="${rowClass}" data-id="${escapeHtml(t.id)}">
+            <td class="wbs-redmine-cell">
+              <div class="wbs-redmine-editor">
+                <input
+                  class="wbs-redmine-input"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="12"
+                  data-field="redmine_no"
+                  value="${escapeHtml(wbsIssueNo)}"
+                  placeholder="#"
+                  title="輸入 Redmine 編號"
+                />
+                <a
+                  class="wbs-redmine-open ${wbsIssueNo ? '' : 'is-empty'}"
+                  href="${escapeHtml(wbsRedmineHref || '#')}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="${wbsIssueNo ? `開啟 Redmine #${escapeHtml(wbsIssueNo)}` : '尚未輸入 Redmine 編號'}"
+                >↗</a>
+              </div>
+            </td>
             <td class="item-cell"><input class="item-input" data-field="item" value="${escapeHtml(t.item)}" /></td>
             <td class="closed-cell"><input type="checkbox" data-field="is_closed" title="勾選結案" ${t.is_closed ? 'checked' : ''}></td>
             ${teamHtml}
@@ -1861,22 +2483,62 @@
       return teams.filter(s => s.key === mode);
     }
 
+    const GANTT_RANGE_PADDING_DAYS = 7;
+
+    function getFixedGanttRange() {
+      // 日期軸永遠依「全部 Team／全部項目」計算，不使用目前下拉篩選後的資料。
+      // 因此切換 PM/FAE、SYSTEM、DATA、MODEL 時，日期與 Bar 的水平位置都不會跳動。
+      const allValidSegments = tasks.flatMap(t =>
+        getTeamSegments(t).filter(segment => segment.valid && segment.checked)
+      );
+
+      if (!allValidSegments.length) return null;
+
+      let minStart = new Date(Math.min(...allValidSegments.map(s => s.startObj.getTime())));
+      let maxEnd = new Date(Math.max(...allValidSegments.map(s => s.endObj.getTime())));
+
+      // 前後保留一週，避免第一個／最後一個 Bar 緊貼邊界。
+      minStart = addDays(minStart, -GANTT_RANGE_PADDING_DAYS);
+      maxEnd = addDays(maxEnd, GANTT_RANGE_PADDING_DAYS);
+
+      return {
+        minStart,
+        maxEnd,
+        totalDays: diffDaysInclusive(minStart, maxEnd)
+      };
+    }
+
     function renderGantt() {
       const gantt = document.getElementById('gantt');
+      const wrap = gantt.closest('.gantt-wrap');
+      const previousScrollLeft = wrap?.scrollLeft || 0;
       const mode = ganttModeEl.value;
-      const rowsWithSegments = tasks.map(t => ({ ...t, segments: segmentsForTask(t, mode) })).filter(t => t.segments.length);
+      const rowsWithSegments = tasks
+        .map(t => ({ ...t, segments: segmentsForTask(t, mode) }))
+        .filter(t => t.segments.length);
 
       if (!rowsWithSegments.length) {
         gantt.innerHTML = '<div class="empty">尚無可繪製甘特圖的資料，請先填寫各 Team 的 start / end。</div>';
         return;
       }
 
-      const allSegments = rowsWithSegments.flatMap(t => t.segments);
-      const minStart = new Date(Math.min(...allSegments.map(s => s.startObj.getTime())));
-      const maxEnd = new Date(Math.max(...allSegments.map(s => s.endObj.getTime())));
-      const totalDays = diffDaysInclusive(minStart, maxEnd);
+      const fixedRange = getFixedGanttRange();
+      if (!fixedRange) {
+        gantt.innerHTML = '<div class="empty">尚無可繪製甘特圖的資料，請先填寫各 Team 的 start / end。</div>';
+        return;
+      }
+
+      const { minStart, maxEnd, totalDays } = fixedRange;
+      const rootStyle = getComputedStyle(document.documentElement);
+      const ganttStyle = getComputedStyle(gantt);
+      const dayWidth = Number.parseFloat(rootStyle.getPropertyValue('--dayw')) || 14;
+      const labelWidth = Number.parseFloat(ganttStyle.getPropertyValue('--gantt-label-w')) || 350;
+      const contentTimelineWidth = Math.ceil(totalDays * dayWidth);
+      const visibleTimelineWidth = Math.max(0, (wrap?.clientWidth || 0) - labelWidth);
+      const timelineWidth = Math.max(contentTimelineWidth, visibleTimelineWidth);
+
       gantt.style.setProperty('--days', String(totalDays));
-      gantt.style.setProperty('--timeline-width', `calc(${totalDays} * var(--dayw))`);
+      gantt.style.setProperty('--timeline-width', `${Math.ceil(timelineWidth)}px`);
 
       const ticks = [];
       const months = [];
@@ -1903,9 +2565,15 @@
           `;
         }).join('');
         const noteTitle = t.notes ? `｜備註：${t.notes}` : '';
+        const issueNo = String(t.redmine_no || '').replace(/\D/g, '');
+        const issueUrl = redmineUrl(issueNo);
+        const itemText = `${t.is_closed ? '✓ ' : ''}${escapeHtml(t.item)}`;
+        const itemLabel = issueNo
+          ? `<a class="gantt-redmine-link" href="${escapeHtml(issueUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(`${t.item}${noteTitle}｜Redmine #${issueNo}`)}">${itemText}</a>`
+          : itemText;
         return `
           <tr class="${t.is_section ? 'section' : ''} ${t.is_closed ? 'closed' : ''}">
-            <th scope="row" class="gantt-label-cell" title="${escapeHtml(t.item + noteTitle)}">${t.is_closed ? '✓ ' : ''}${escapeHtml(t.item)}</th>
+            <th scope="row" class="gantt-label-cell" title="${escapeHtml(t.item + noteTitle)}">${itemLabel}</th>
             <td class="gantt-timeline-cell"><div class="timeline" style="height:${rowHeight}px;">${bars}</div></td>
           </tr>
         `;
@@ -1926,6 +2594,12 @@
           <tbody>${rows}</tbody>
         </table>
       `;
+
+      // 重繪時保留使用者原本的水平捲動位置；若超過新範圍則自動限制。
+      if (wrap) {
+        const maxScrollLeft = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+        wrap.scrollLeft = Math.min(previousScrollLeft, maxScrollLeft);
+      }
     }
 
     function renderAll() {
@@ -1945,6 +2619,7 @@
         id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         seq,
         item,
+        redmine_no: '',
         is_section: false,
         is_closed: false,
         pm_fae: false,
@@ -2021,6 +2696,7 @@
         id: normalized.id,
         seq: normalized.seq,
         item: normalized.item,
+        redmine_no: normalized.redmine_no || '',
         is_section: normalized.is_section,
         is_closed: normalized.is_closed,
         pm_fae: normalized.pm_fae,
@@ -2056,7 +2732,12 @@
         setStatus('雲端已同步', 'ok');
       } catch (err) {
         console.error(err);
-        setStatus(`雲端儲存失敗：${err.message || err}`, 'err');
+        const errorText = `${err?.message || ''} ${err?.details || ''} ${err?.hint || ''}`.toLowerCase();
+        if (errorText.includes('redmine_no') || errorText.includes('schema cache')) {
+          setStatus('請先執行 v26 Supabase 升級 SQL，新增 WBS Redmine 欄位', 'err');
+        } else {
+          setStatus(`雲端儲存失敗：${err.message || err}`, 'err');
+        }
       }
     }
 
@@ -2154,15 +2835,59 @@
     function normalizeComment(c) {
       const author = COMMENT_AUTHORS.includes(String(c.author || '')) ? String(c.author) : 'PM/FAE';
       const audience = COMMENT_TARGETS.includes(String(c.audience || '')) ? String(c.audience) : 'ALL';
+      const status = AR_STATUSES.includes(String(c.status || '')) ? String(c.status) : 'To Do';
+      const createdAt = c.created_at || new Date().toISOString();
+      const defaultSort = new Date(createdAt).getTime();
       return {
         id: String(c.id || safeUuid()),
+        sort_order: Number.isFinite(Number(c.sort_order)) ? Number(c.sort_order) : defaultSort,
+        redmine_no: String(c.redmine_no || '').replace(/\D/g, ''),
+        status,
         author,
         audience,
         message: String(c.message || ''),
         reply: String(c.reply || ''),
-        created_at: c.created_at || new Date().toISOString(),
-        updated_at: c.updated_at || c.created_at || new Date().toISOString()
+        deadline_date: cleanDate(c.deadline_date),
+        created_at: createdAt,
+        updated_at: c.updated_at || createdAt,
+        _isNew: Boolean(c._isNew)
       };
+    }
+
+    function sortComments(items = comments) {
+      return [...items].sort((a, b) =>
+        Number(a.sort_order) - Number(b.sort_order) ||
+        String(a.created_at).localeCompare(String(b.created_at)) ||
+        String(a.id).localeCompare(String(b.id))
+      );
+    }
+
+    function redmineUrl(redmineNo) {
+      const issueNo = String(redmineNo || '').replace(/\D/g, '');
+      return issueNo ? `${REDMINE_BASE_URL}${issueNo}` : '';
+    }
+
+    function statusClassName(status) {
+      if (status === 'In Progress') return 'ar-status-progress';
+      if (status === 'Review') return 'ar-status-review';
+      if (status === 'Done') return 'ar-status-done';
+      return 'ar-status-todo';
+    }
+
+    function deadlineClassName(comment) {
+      const deadline = cleanDate(comment?.deadline_date);
+      if (!deadline) return 'ar-deadline-empty';
+      if (comment?.status === 'Done') return 'ar-deadline-done';
+      const today = toISODate(new Date());
+      return deadline < today ? 'ar-deadline-overdue' : '';
+    }
+
+    function compactDateTime(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const pad = value => String(value).padStart(2, '0');
+      return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
     }
 
     function normalizeReminder(r) {
@@ -2203,7 +2928,7 @@
     function saveCommentsLocal() {
       localStorage.setItem(commentsStorageKey, JSON.stringify(comments));
       renderComments();
-      setSubStatus(commentStatusEl, '已儲存在此瀏覽器', 'ok');
+      setSubStatus(commentStatusEl, 'AR 已儲存在此瀏覽器', 'ok');
     }
 
     function saveRemindersLocal() {
@@ -2219,14 +2944,14 @@
         const { data, error } = await db
           .from(COMMENTS_TABLE)
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
+          .order('created_at', { ascending: true })
+          .limit(500);
         if (error) throw error;
         comments = (data || []).map(normalizeComment);
         setSubStatus(commentStatusEl, '雲端同步', 'ok');
       } catch (err) {
         console.error(err);
-        setSubStatus(commentStatusEl, '請先執行 v11 SQL', 'err');
+        setSubStatus(commentStatusEl, 'AR List 雲端表尚未建立或權限不足', 'err');
       }
     }
 
@@ -2251,69 +2976,222 @@
       return values.map(value => `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('');
     }
 
-    function renderComments() {
-      if (!commentTbody) return;
-      const sorted = [...comments].sort((a, b) =>
-        String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id))
-      );
-      if (!sorted.length) {
-        commentTbody.innerHTML = '<tr><td colspan="5" class="empty">目前沒有留言，請按「新增留言」。</td></tr>';
-        return;
-      }
-      commentTbody.innerHTML = sorted.map(c => `
-        <tr data-comment-id="${escapeHtml(c.id)}">
-          <td><select data-comment-field="author">${commentSelectOptions(COMMENT_AUTHORS, c.author)}</select></td>
-          <td><select data-comment-field="audience">${commentSelectOptions(COMMENT_TARGETS, c.audience)}</select></td>
-          <td><textarea data-comment-field="message" maxlength="3000" placeholder="自由填寫留言內容">${escapeHtml(c.message)}</textarea></td>
-          <td><textarea data-comment-field="reply" maxlength="3000" placeholder="自由填寫回覆">${escapeHtml(c.reply)}</textarea></td>
-          <td class="comment-action-col"><button class="mini-btn danger" type="button" data-comment-action="delete">刪除</button></td>
-        </tr>
-      `).join('');
+    function arViewText(value, emptyText = '—') {
+      const text = String(value || '');
+      return text
+        ? `<div class="ar-view-text">${escapeHtml(text)}</div>`
+        : `<div class="ar-view-text ar-view-empty">${escapeHtml(emptyText)}</div>`;
     }
 
-    function createBlankComment() {
+    function renderComments() {
+      if (!commentTbody) return;
+      const allSorted = sortComments(comments);
+      const visible = showDoneAr ? allSorted : allSorted.filter(c => c.status !== 'Done');
+      if (!visible.length) {
+        const emptyText = comments.length && !showDoneAr
+          ? '目前沒有未結案項目；可勾選「顯示已結案」查看 Done 項目。'
+          : '目前沒有 AR，請按「＋ 新增 AR」。';
+        commentTbody.innerHTML = `<tr><td colspan="9" class="empty">${escapeHtml(emptyText)}</td></tr>`;
+        return;
+      }
+
+      commentTbody.innerHTML = visible.map((c, visibleIndex) => {
+        const isEditing = editingCommentIds.has(c.id);
+        const overallIndex = allSorted.findIndex(item => item.id === c.id) + 1;
+        const rowClasses = [
+          c.status === 'Done' ? 'ar-row-done' : '',
+          isEditing ? 'ar-row-editing' : ''
+        ].filter(Boolean).join(' ');
+        const issueNo = String(c.redmine_no || '').replace(/\D/g, '');
+        const redmineCell = isEditing
+          ? `<input class="ar-redmine-input" type="text" inputmode="numeric" maxlength="12" data-comment-field="redmine_no" value="${escapeHtml(issueNo)}" placeholder="例如 27932" />`
+          : issueNo
+            ? `<a class="ar-redmine-link" href="${escapeHtml(redmineUrl(issueNo))}" target="_blank" rel="noopener noreferrer">#${escapeHtml(issueNo)}</a>`
+            : '<span class="ar-view-empty">—</span>';
+        const statusCell = isEditing
+          ? `<select data-comment-field="status">${commentSelectOptions(AR_STATUSES, c.status)}</select>`
+          : `<span class="ar-status-badge ${statusClassName(c.status)}">${escapeHtml(c.status)}</span>`;
+        const authorCell = isEditing
+          ? `<select data-comment-field="author">${commentSelectOptions(COMMENT_AUTHORS, c.author)}</select>`
+          : `<div class="ar-view-text">${escapeHtml(c.author)}</div>`;
+        const audienceCell = isEditing
+          ? `<select data-comment-field="audience">${commentSelectOptions(COMMENT_TARGETS, c.audience)}</select>`
+          : `<div class="ar-view-text">${escapeHtml(c.audience)}</div>`;
+        const messageCell = isEditing
+          ? `<textarea data-comment-field="message" maxlength="5000" placeholder="填寫需求內容">${escapeHtml(c.message)}</textarea>`
+          : arViewText(c.message, '尚未填寫需求內容');
+        const replyCell = isEditing
+          ? `<textarea data-comment-field="reply" maxlength="5000" placeholder="填寫處理進度或回覆">${escapeHtml(c.reply)}</textarea>`
+          : arViewText(c.reply, '尚未填寫進度回覆');
+        const actionCell = isEditing
+          ? `<div class="ar-action-buttons">
+               <button class="mini-btn save-btn" type="button" data-comment-action="save">儲存</button>
+               <button class="mini-btn" type="button" data-comment-action="cancel">取消</button>
+               <button class="mini-btn danger" type="button" data-comment-action="delete">刪除</button>
+             </div>`
+          : `<div class="ar-action-buttons">
+               <button class="mini-btn" type="button" data-comment-action="edit">編輯</button>
+               <button class="mini-btn danger" type="button" data-comment-action="delete">刪除</button>
+             </div>`;
+
+        return `
+          <tr class="${rowClasses}" data-comment-id="${escapeHtml(c.id)}">
+            <td class="ar-no-cell" title="目前顯示序號 ${visibleIndex + 1}">${overallIndex}</td>
+            <td>${redmineCell}</td>
+            <td>${statusCell}</td>
+            <td>${authorCell}</td>
+            <td>${audienceCell}</td>
+            <td>${messageCell}</td>
+            <td>${replyCell}</td>
+            <td>
+              <div class="ar-date-stack">
+                <span><strong>建立</strong> ${escapeHtml(compactDateTime(c.created_at))}</span>
+                <span><strong>更新</strong> ${escapeHtml(compactDateTime(c.updated_at))}</span>
+                <label class="ar-deadline-row" title="可直接設定或修改截止日期">
+                  <strong>截止</strong>
+                  <input
+                    class="ar-deadline-input ${deadlineClassName(c)}"
+                    type="date"
+                    data-comment-field="deadline_date"
+                    value="${escapeHtml(cleanDate(c.deadline_date))}"
+                    aria-label="截止日期"
+                  />
+                </label>
+              </div>
+            </td>
+            <td class="comment-action-col">${actionCell}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function nextCommentSortOrder() {
+      const sorted = sortComments(comments);
+      if (!sorted.length) return Date.now();
+      return Number(sorted[sorted.length - 1].sort_order) + 1000;
+    }
+
+    function createBlankComment(sortOrder = Date.now()) {
       return normalizeComment({
         id: safeUuid(),
+        sort_order: sortOrder,
+        redmine_no: '',
+        status: 'To Do',
         author: 'PM/FAE',
         audience: 'ALL',
         message: '',
-        reply: ''
+        reply: '',
+        deadline_date: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        _isNew: true
       });
     }
 
+    function commentPayload(comment, extended = true) {
+      const payload = {
+        id: comment.id,
+        author: comment.author,
+        audience: comment.audience,
+        message: comment.message,
+        reply: comment.reply,
+        created_at: comment.created_at,
+        updated_at: comment.updated_at
+      };
+      if (extended) {
+        payload.sort_order = Number(comment.sort_order);
+        payload.redmine_no = comment.redmine_no || '';
+        payload.status = comment.status;
+        payload.deadline_date = dateForDb(comment.deadline_date);
+      }
+      return payload;
+    }
+
+    function isMissingArColumnError(error) {
+      const text = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase();
+      return text.includes('sort_order') || text.includes('redmine_no') || text.includes('status') || text.includes('deadline_date') || text.includes('schema cache');
+    }
+
     async function saveComment(comment) {
+      comment.redmine_no = String(comment.redmine_no || '').replace(/\D/g, '');
+      comment.status = AR_STATUSES.includes(comment.status) ? comment.status : 'To Do';
+      comment.deadline_date = cleanDate(comment.deadline_date);
       comment.updated_at = new Date().toISOString();
       ignoreCommentRemoteUntil = Date.now() + 1600;
       if (!isRemoteMode) {
+        comment._isNew = false;
         saveCommentsLocal();
-        return;
+        return true;
       }
       try {
-        setSubStatus(commentStatusEl, '儲存中...');
-        const payload = {
-          id: comment.id,
-          author: comment.author,
-          audience: comment.audience,
-          message: comment.message,
-          reply: comment.reply
-        };
-        const { error } = await db.from(COMMENTS_TABLE).upsert(payload, { onConflict: 'id' });
+        setSubStatus(commentStatusEl, 'AR 儲存中...');
+        const { error } = await db.from(COMMENTS_TABLE).upsert(commentPayload(comment, true), { onConflict: 'id' });
         if (error) throw error;
-        setSubStatus(commentStatusEl, '留言已同步', 'ok');
+        comment._isNew = false;
+        setSubStatus(commentStatusEl, 'AR 已同步', 'ok');
+        return true;
       } catch (err) {
         console.error(err);
-        setSubStatus(commentStatusEl, `留言儲存失敗：${err.message || err}`, 'err');
+        if (isMissingArColumnError(err)) {
+          setSubStatus(commentStatusEl, '請先執行 v26 Supabase 升級 SQL，新增 AR 截止日欄位後才能雲端同步', 'err');
+        } else {
+          setSubStatus(commentStatusEl, `AR 儲存失敗：${err.message || err}`, 'err');
+        }
+        return false;
       }
     }
 
-    async function addCommentRow() {
-      const comment = createBlankComment();
-      comments.push(comment);
+    function beginCommentEdit(comment) {
+      if (!commentEditSnapshots.has(comment.id)) {
+        commentEditSnapshots.set(comment.id, { ...comment });
+      }
+      editingCommentIds.add(comment.id);
       renderComments();
-      await saveComment(comment);
       const row = commentTbody.querySelector(`[data-comment-id="${CSS.escape(comment.id)}"]`);
-      const textarea = row?.querySelector('textarea[data-comment-field="message"]');
-      if (textarea) textarea.focus();
+      row?.querySelector('[data-comment-field="message"]')?.focus();
+    }
+
+    async function addCommentRow() {
+      const comment = createBlankComment(nextCommentSortOrder());
+      comments.push(comment);
+      editingCommentIds.add(comment.id);
+      renderComments();
+      const row = commentTbody.querySelector(`[data-comment-id="${CSS.escape(comment.id)}"]`);
+      const wrap = row?.closest('.comment-table-wrap');
+
+      if (wrap) {
+        requestAnimationFrame(() => {
+          wrap.scrollTop = wrap.scrollHeight;
+          row?.querySelector('[data-comment-field="message"]')?.focus({ preventScroll: true });
+        });
+      }
+      setSubStatus(commentStatusEl, '新增 AR 已加在清單最下方，尚未儲存', '');
+    }
+
+    async function saveEditedComment(comment) {
+      if (!String(comment.message || '').trim()) {
+        alert('請先填寫「需求內容」。');
+        const row = commentTbody.querySelector(`[data-comment-id="${CSS.escape(comment.id)}"]`);
+        row?.querySelector('[data-comment-field="message"]')?.focus();
+        return;
+      }
+      const saved = await saveComment(comment);
+      if (!saved) return;
+      editingCommentIds.delete(comment.id);
+      commentEditSnapshots.delete(comment.id);
+      renderComments();
+    }
+
+    function cancelCommentEdit(comment) {
+      if (comment._isNew) {
+        comments = comments.filter(item => item.id !== comment.id);
+      } else {
+        const snapshot = commentEditSnapshots.get(comment.id);
+        if (snapshot) Object.assign(comment, snapshot);
+      }
+      editingCommentIds.delete(comment.id);
+      commentEditSnapshots.delete(comment.id);
+      renderComments();
+      setSubStatus(commentStatusEl, '已取消編輯', '');
     }
 
     function reminderDateText(r) {
@@ -2355,9 +3233,12 @@
         TEAM_DEFS.forEach(team => {
           const teamInfo = getEffectiveTeamSummary(t, team);
           if (!teamInfo.owner) return;
+          const taskIssueNo = String(t.redmine_no || '').replace(/\D/g, '');
+          const taskRedmineUrl = redmineUrl(taskIssueNo);
           const baseClasses = [
             'calendar-task-event',
             `calendar-${team.className}`,
+            taskIssueNo ? 'calendar-has-redmine' : '',
             t.is_closed ? 'closed-event' : ''
           ].filter(Boolean);
 
@@ -2369,11 +3250,13 @@
               title: `${team.label} ${t.item} start`,
               start: startDate,
               allDay: true,
+              ...(taskRedmineUrl ? { url: taskRedmineUrl } : {}),
               classNames: [...baseClasses, 'calendar-start-event'],
               extendedProps: {
                 kind: 'task-point', taskId: t.id, teamLabel: team.label,
                 taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 0,
-                pointType: 'start', pointDate: startDate, notes: t.notes || ''
+                pointType: 'start', pointDate: startDate, notes: t.notes || '',
+                redmineNo: taskIssueNo, redmineUrl: taskRedmineUrl
               }
             });
           }
@@ -2383,11 +3266,13 @@
               title: `${team.label} ${t.item} end`,
               start: endDate,
               allDay: true,
+              ...(taskRedmineUrl ? { url: taskRedmineUrl } : {}),
               classNames: [...baseClasses, 'calendar-end-event'],
               extendedProps: {
                 kind: 'task-point', taskId: t.id, teamLabel: team.label,
                 taskSeq: Number(t.seq) || 0, teamOrder: TEAM_DEFS.indexOf(team), pointOrder: 1,
-                pointType: 'end', pointDate: endDate, notes: t.notes || ''
+                pointType: 'end', pointDate: endDate, notes: t.notes || '',
+                redmineNo: taskIssueNo, redmineUrl: taskRedmineUrl
               }
             });
           }
@@ -2422,6 +3307,18 @@
           }
         });
       });
+      sortComments(comments).forEach((comment, index) => {
+        if (cleanDate(comment.deadline_date) !== dateStr) return;
+        const issueNo = String(comment.redmine_no || '').replace(/\D/g, '');
+        const message = String(comment.message || '').replace(/\s+/g, ' ').trim() || '未填需求內容';
+        const isDone = comment.status === 'Done';
+        items.push({
+          kind: 'ar-deadline', team: 'AR 截止',
+          teamClass: isDone ? 'ar-deadline-done' : 'ar-deadline',
+          text: `${issueNo ? `#${issueNo} ` : ''}${message}`,
+          seq: 900000 + index, teamOrder: 90, pointOrder: 0
+        });
+      });
       reminders.forEach((r, index) => {
         if (cleanDate(r.reminder_date) !== dateStr) return;
         items.push({
@@ -2453,6 +3350,53 @@
         <div class="today-agenda-date">今天是 ${escapeHtml(formatTodayDisplay(now))}</div>
         <div class="today-agenda-list">${itemHtml}</div>
       `;
+    }
+
+    function arDeadlineCalendarEvents() {
+      const today = toISODate(new Date());
+      const sorted = sortComments(comments);
+      return sorted.flatMap((comment, index) => {
+        const deadline = cleanDate(comment.deadline_date);
+        if (!parseISODate(deadline)) return [];
+
+        const issueNo = String(comment.redmine_no || '').replace(/\D/g, '');
+        const issueUrl = redmineUrl(issueNo);
+        const message = String(comment.message || '').replace(/\s+/g, ' ').trim();
+        const summary = message || '未填需求內容';
+        const shortSummary = summary.length > 28 ? `${summary.slice(0, 28)}…` : summary;
+        const isDone = comment.status === 'Done';
+        const isOverdue = !isDone && deadline < today;
+        const classes = [
+          'calendar-ar-deadline-event',
+          issueNo ? 'calendar-has-redmine' : '',
+          isDone ? 'ar-deadline-done-event' : '',
+          isOverdue ? 'ar-deadline-overdue-event' : ''
+        ].filter(Boolean);
+
+        return [{
+          id: `ar-deadline-${comment.id}`,
+          title: `AR${issueNo ? ` #${issueNo}` : ` ${index + 1}`} 截止 ${shortSummary}`,
+          start: deadline,
+          allDay: true,
+          ...(issueUrl ? { url: issueUrl } : {}),
+          classNames: classes,
+          extendedProps: {
+            kind: 'ar-deadline',
+            commentId: comment.id,
+            status: comment.status,
+            author: comment.author,
+            audience: comment.audience,
+            message: summary,
+            reply: comment.reply || '',
+            deadlineDate: deadline,
+            redmineNo: issueNo,
+            redmineUrl: issueUrl,
+            taskSeq: 900000 + index,
+            teamOrder: 90,
+            pointOrder: 0
+          }
+        }];
+      });
     }
 
     function reminderCalendarEvents() {
@@ -2622,8 +3566,9 @@
         eventOrder(a, b) {
           const ap = a.extendedProps || {};
           const bp = b.extendedProps || {};
-          const aKind = ap.kind === 'task-point' ? 0 : 1;
-          const bKind = bp.kind === 'task-point' ? 0 : 1;
+          const kindRank = kind => kind === 'task-point' ? 0 : kind === 'ar-deadline' ? 1 : 2;
+          const aKind = kindRank(ap.kind);
+          const bKind = kindRank(bp.kind);
           return aKind - bKind
             || (Number(ap.taskSeq) || 0) - (Number(bp.taskSeq) || 0)
             || (Number(ap.teamOrder) || 0) - (Number(bp.teamOrder) || 0)
@@ -2659,7 +3604,12 @@
         },
         eventContent(info) {
           const p = info.event.extendedProps || {};
-          if (p.kind !== 'reminder') return { html: escapeHtml(info.event.title) };
+          if (p.kind !== 'reminder') {
+            const label = document.createElement('span');
+            label.className = 'calendar-event-label';
+            label.textContent = info.event.title;
+            return { domNodes: [label] };
+          }
 
           const wrap = document.createElement('span');
           wrap.className = 'calendar-reminder-content';
@@ -2687,6 +3637,11 @@
         },
         eventClick(info) {
           const p = info.event.extendedProps || {};
+          if (p.redmineUrl) {
+            info.jsEvent?.preventDefault();
+            window.open(p.redmineUrl, '_blank', 'noopener,noreferrer');
+            return;
+          }
           if (p.kind === 'reminder') {
             const reminder = reminders.find(r => r.id === p.reminderId);
             if (!reminder) return;
@@ -2697,6 +3652,18 @@
             } else {
               updateInlineReminder(reminder, edited);
             }
+            return;
+          }
+          if (p.kind === 'ar-deadline') {
+            const lines = [
+              `AR 截止：${p.deadlineDate || ''}`,
+              `狀態：${p.status || ''}`,
+              `發起人：${p.author || ''}`,
+              `對象：${p.audience || ''}`,
+              `需求：${p.message || ''}`
+            ];
+            if (p.reply) lines.push(`進度回覆：${p.reply}`);
+            alert(lines.join('\n'));
             return;
           }
           if (p.kind === 'task-point') {
@@ -2712,9 +3679,15 @@
         },
         eventDidMount(info) {
           const p = info.event.extendedProps || {};
+          if (p.redmineUrl && info.el.tagName === 'A') {
+            info.el.target = '_blank';
+            info.el.rel = 'noopener noreferrer';
+          }
           if (p.kind === 'task-point') {
-            info.el.title = `${info.event.title}${p.notes ? `
+            info.el.title = `${info.event.title}${p.redmineNo ? `\nRedmine：#${p.redmineNo}` : ''}${p.notes ? `
 備註：${p.notes}` : ''}`;
+          } else if (p.kind === 'ar-deadline') {
+            info.el.title = `${info.event.title}\n狀態：${p.status || ''}${p.redmineNo ? `\nRedmine：#${p.redmineNo}` : ''}`;
           } else {
             info.el.title = `${info.event.title}${p.notes ? `
 ${p.notes}` : ''}`;
@@ -2729,7 +3702,11 @@ ${p.notes}` : ''}`;
       initCalendar();
       if (!calendar) return;
       calendar.removeAllEvents();
-      calendar.addEventSource([...taskCalendarEvents(), ...reminderCalendarEvents()]);
+      calendar.addEventSource([
+        ...taskCalendarEvents(),
+        ...arDeadlineCalendarEvents(),
+        ...reminderCalendarEvents()
+      ]);
       window.setTimeout(() => calendar?.updateSize(), 0);
     }
 
@@ -2815,7 +3792,7 @@ ${p.notes}` : ''}`;
 
     async function deleteComment(id) {
       const comment = comments.find(c => c.id === id);
-      if (!comment || !confirm('確定刪除這則留言？')) return;
+      if (!comment || !confirm('確定刪除這筆 AR？')) return;
       if (!isRemoteMode) {
         comments = comments.filter(c => c.id !== id);
         saveCommentsLocal();
@@ -2826,7 +3803,7 @@ ${p.notes}` : ''}`;
         if (error) throw error;
         comments = comments.filter(c => c.id !== id);
         renderComments();
-        setSubStatus(commentStatusEl, '留言已刪除', 'ok');
+        setSubStatus(commentStatusEl, 'AR 已刪除', 'ok');
       } catch (err) {
         console.error(err);
         setSubStatus(commentStatusEl, `刪除失敗：${err.message || err}`, 'err');
@@ -2839,7 +3816,7 @@ ${p.notes}` : ''}`;
         commentChannel = db
           .channel('project_comments_realtime')
           .on('postgres_changes', { event: '*', schema: 'public', table: COMMENTS_TABLE }, async () => {
-            if (Date.now() < ignoreCommentRemoteUntil) return;
+            if (Date.now() < ignoreCommentRemoteUntil || editingCommentIds.size) return;
             await loadCommentsRemote();
             renderComments();
           })
@@ -2869,31 +3846,65 @@ ${p.notes}` : ''}`;
 
     document.getElementById('addCommentRowBtn').addEventListener('click', () => addCommentRow());
 
-    commentTbody.addEventListener('change', (e) => {
+    if (showDoneArEl) {
+      showDoneArEl.addEventListener('change', () => {
+        showDoneAr = showDoneArEl.checked;
+        localStorage.setItem(arShowDoneStorageKey, String(showDoneAr));
+        renderComments();
+      });
+    }
+
+    commentTbody.addEventListener('input', (e) => {
       const field = e.target.dataset.commentField;
       if (!field) return;
       const row = e.target.closest('[data-comment-id]');
       const comment = comments.find(c => c.id === row?.dataset.commentId);
       if (!comment) return;
-      comment[field] = e.target.value;
-      saveComment(comment);
+      const value = field === 'redmine_no'
+        ? String(e.target.value || '').replace(/\D/g, '')
+        : field === 'deadline_date'
+          ? cleanDate(e.target.value)
+          : e.target.value;
+      if (field === 'redmine_no' && e.target.value !== value) e.target.value = value;
+      comment[field] = value;
     });
 
-    commentTbody.addEventListener('blur', (e) => {
+    commentTbody.addEventListener('change', async (e) => {
       const field = e.target.dataset.commentField;
-      if (!field || e.target.tagName !== 'TEXTAREA') return;
+      if (!field) return;
       const row = e.target.closest('[data-comment-id]');
       const comment = comments.find(c => c.id === row?.dataset.commentId);
       if (!comment) return;
-      comment[field] = e.target.value;
-      saveComment(comment);
-    }, true);
+      comment[field] = field === 'redmine_no'
+        ? String(e.target.value || '').replace(/\D/g, '')
+        : field === 'deadline_date'
+          ? cleanDate(e.target.value)
+          : e.target.value;
 
-    commentTbody.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-comment-action="delete"]');
+      // 截止日可在檢視狀態直接修改；不必先按「編輯」。
+      if (field === 'deadline_date' && !editingCommentIds.has(comment.id)) {
+        const saved = await saveComment(comment);
+        if (saved && isRemoteMode) renderComments();
+      }
+    });
+
+    commentTbody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-comment-action]');
       if (!btn) return;
       const row = btn.closest('[data-comment-id]');
-      if (row) deleteComment(row.dataset.commentId);
+      const comment = comments.find(c => c.id === row?.dataset.commentId);
+      if (!comment) return;
+
+      const action = btn.dataset.commentAction;
+      if (action === 'edit') {
+        beginCommentEdit(comment);
+      } else if (action === 'save') {
+        await saveEditedComment(comment);
+      } else if (action === 'cancel') {
+        cancelCommentEdit(comment);
+      } else if (action === 'delete') {
+        await deleteComment(comment.id);
+      }
     });
 
     const reminderFormEl = document.getElementById('reminderForm');
@@ -2929,7 +3940,13 @@ ${p.notes}` : ''}`;
       const field = e.target.dataset.field;
       if (!field) return;
       if (task.is_section && (field === 'pm_fae' || field === 'owner_system' || field === 'owner_data' || field === 'owner_model' || field.endsWith('_date'))) return;
-      task[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+      const nextValue = e.target.type === 'checkbox'
+        ? e.target.checked
+        : field === 'redmine_no'
+          ? String(e.target.value || '').replace(/\D/g, '')
+          : e.target.value;
+      if (field === 'redmine_no' && e.target.value !== nextValue) e.target.value = nextValue;
+      task[field] = nextValue;
       refreshOverallDates();
       renderAll();
       scheduleSave();
@@ -3011,6 +4028,13 @@ ${p.notes}` : ''}`;
     ganttModeEl.addEventListener('change', () => {
       localStorage.setItem(ganttModeKey, ganttModeEl.value);
       renderGantt();
+    });
+
+    // 視窗寬度變動時重新計算日期區的最小可視寬度。
+    let ganttResizeTimer = null;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(ganttResizeTimer);
+      ganttResizeTimer = window.setTimeout(renderGantt, 120);
     });
 
     (async function init() {
