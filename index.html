@@ -1754,17 +1754,63 @@
     .today-agenda-item.ar-deadline-done { border-left: 4px solid #047857; }
 
 
-    /* v31：今日任務依 Team 分組；起／迄以小方形標記呈現，Redmine 連結維持原文字樣式。 */
+    /* v32：今日任務依 Team 分組；AR 截止依「對象」分派，並提供聊天室文字複製。 */
     .today-agenda {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: 170px minmax(0, 1fr);
       align-items: start;
       gap: 10px 14px;
     }
 
-    .today-agenda-date {
-      padding-top: 4px;
+    .today-agenda-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+      min-width: 0;
     }
+
+    .today-agenda-date {
+      padding-top: 2px;
+      font-weight: 800;
+    }
+
+    .today-agenda-copy-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 27px;
+      padding: 4px 9px;
+      border: 1px solid #94a3b8;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .today-agenda-copy-btn:hover,
+    .today-agenda-copy-btn:focus {
+      border-color: #2563eb;
+      color: #1d4ed8;
+    }
+
+    .today-agenda-copy-btn.copied {
+      border-color: #059669;
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .today-agenda-copy-status {
+      min-height: 16px;
+      color: #64748b;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .today-agenda-copy-status.ok { color: #047857; }
+    .today-agenda-copy-status.err { color: #b91c1c; }
 
     .today-agenda-groups {
       display: flex;
@@ -1890,6 +1936,11 @@
     @media (max-width: 760px) {
       .today-agenda {
         grid-template-columns: 1fr;
+      }
+      .today-agenda-side {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
       }
       .today-agenda-group {
         grid-template-columns: 76px minmax(0, 1fr);
@@ -2181,6 +2232,7 @@
     const legacyStorageKey = 'project_gantt_tasks_v1';
     const ganttModeKey = 'project_gantt_view_mode_v3';
     const validGanttModes = new Set(['overall', ...TEAM_DEFS.map(team => team.key)]);
+    const PROJECT_COLLAB_URL = 'https://vincylo.github.io/P123456789/';
 
     let db = null;
     let tasks = [];
@@ -3602,6 +3654,14 @@
     }
 
 
+    function agendaTargetsForAudience(audience) {
+      const normalized = String(audience || 'ALL').trim().toUpperCase();
+      if (normalized === 'ALL') return TEAM_DEFS.map((team, teamOrder) => ({ team, teamOrder }));
+      const teamOrder = TEAM_DEFS.findIndex(team => team.label.toUpperCase() === normalized);
+      if (teamOrder >= 0) return [{ team: TEAM_DEFS[teamOrder], teamOrder }];
+      return TEAM_DEFS.map((team, index) => ({ team, teamOrder: index }));
+    }
+
     function getTodayAgendaItems(dateStr) {
       const items = [];
       tasks.forEach(t => {
@@ -3633,18 +3693,23 @@
         });
       });
 
+      // AR 截止依「對象」放入對應 Team；對象為 ALL 時，每個 Team 都會收到同一筆截止任務。
       sortComments(comments).forEach((comment, index) => {
         if (cleanDate(comment.deadline_date) !== dateStr) return;
         const issueNo = String(comment.redmine_no || '').replace(/\D/g, '');
         const issueUrl = redmineUrl(issueNo);
         const message = String(comment.message || '').replace(/\s+/g, ' ').trim() || '未填需求內容';
         const isDone = comment.status === 'Done';
-        items.push({
-          kind: 'ar-deadline', groupKey: 'ar-deadline', team: 'AR 截止',
-          teamClass: isDone ? 'ar-deadline-done' : 'ar-deadline',
-          text: `${issueNo ? `#${issueNo} ` : ''}${message}`,
-          pointType: 'deadline', redmineNo: issueNo, redmineUrl: issueUrl,
-          seq: 900000 + index, teamOrder: 90, pointOrder: 0
+        agendaTargetsForAudience(comment.audience).forEach(({ team, teamOrder }) => {
+          items.push({
+            kind: 'ar-deadline', groupKey: team.key,
+            team: team.label, teamClass: team.className,
+            taskId: `ar-${comment.id}-${team.key}`,
+            text: `${issueNo ? `#${issueNo} ` : ''}${message}`,
+            pointType: 'deadline', redmineNo: issueNo, redmineUrl: issueUrl,
+            seq: 900000 + index, teamOrder, pointOrder: 2,
+            status: comment.status, isDone
+          });
         });
       });
 
@@ -3671,13 +3736,8 @@
       );
     }
 
-    function renderTodayAgenda() {
-      if (!todayAgendaEl) return;
-      const now = new Date();
-      const dateStr = toISODate(now);
+    function getMergedTodayAgendaItems(dateStr) {
       const rawItems = getTodayAgendaItems(dateStr);
-
-      // 同一個 Team、同一個任務若同日開始且結束，合併為一個任務並同時顯示「起／迄」標記。
       const merged = [];
       const mergedTaskMap = new Map();
       rawItems.forEach(item => {
@@ -3694,9 +3754,12 @@
         }
         if (!target.pointTypes.includes(item.pointType)) target.pointTypes.push(item.pointType);
       });
+      return merged;
+    }
 
+    function getTodayAgendaGroups(dateStr) {
       const groups = new Map();
-      merged.forEach(item => {
+      getMergedTodayAgendaItems(dateStr).forEach(item => {
         if (!groups.has(item.groupKey)) {
           groups.set(item.groupKey, {
             key: item.groupKey,
@@ -3708,12 +3771,112 @@
         }
         groups.get(item.groupKey).items.push(item);
       });
+      return [...groups.values()].sort((a, b) => a.teamOrder - b.teamOrder);
+    }
+
+    function todayAgendaSymbol(item) {
+      const types = item.pointTypes || [item.pointType];
+      if (types.includes('start') && types.includes('end')) return '◆';
+      if (types.includes('start')) return '▶';
+      if (types.includes('end')) return '■';
+      if (types.includes('deadline')) return '⏰';
+      if (types.includes('reminder')) return '🔔';
+      if (types.includes('holiday')) return '●';
+      return '•';
+    }
+
+    function buildTodayAgendaCopyText(date = new Date()) {
+      const dateStr = toISODate(date);
+      const groups = getTodayAgendaGroups(dateStr);
+      const groupMap = new Map(groups.map(group => [group.key, group]));
+      const lines = [
+        `今天是 ${formatTodayDisplay(date)}`,
+        '各組任務如下：',
+        ''
+      ];
+
+      // 固定輸出四個 Team；沒有任務時明確標示「無」。
+      TEAM_DEFS.forEach(team => {
+        const group = groupMap.get(team.key);
+        lines.push(`${team.label}：`);
+        if (!group?.items?.length) {
+          lines.push('（無）');
+        } else {
+          group.items.forEach(item => {
+            const link = item.redmineUrl ? `\n  ${item.redmineUrl}` : '';
+            lines.push(`${todayAgendaSymbol(item)} ${item.text}${link}`);
+          });
+        }
+        lines.push('');
+      });
+
+      groups
+        .filter(group => !TEAM_DEFS.some(team => team.key === group.key))
+        .forEach(group => {
+          lines.push(`${group.team}：`);
+          group.items.forEach(item => lines.push(`${todayAgendaSymbol(item)} ${item.text}`));
+          lines.push('');
+        });
+
+      lines.push('有更新記得填寫 Redmine～');
+      lines.push('專案共編表：');
+      lines.push(PROJECT_COLLAB_URL);
+      return lines.join('\n');
+    }
+
+    async function copyTodayAgenda(buttonEl = null) {
+      const copyText = buildTodayAgendaCopyText(new Date());
+      const statusEl = document.getElementById('todayAgendaCopyStatus');
+      const setFeedback = (message, type = 'ok') => {
+        if (statusEl) {
+          statusEl.textContent = message;
+          statusEl.className = `today-agenda-copy-status ${type}`;
+        }
+        if (buttonEl && type === 'ok') {
+          buttonEl.classList.add('copied');
+          const oldText = buttonEl.textContent;
+          buttonEl.textContent = '已複製';
+          window.setTimeout(() => {
+            buttonEl.classList.remove('copied');
+            buttonEl.textContent = oldText;
+            if (statusEl) statusEl.textContent = '';
+          }, 1500);
+        }
+      };
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(copyText);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = copyText;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const copied = document.execCommand('copy');
+          textarea.remove();
+          if (!copied) throw new Error('瀏覽器未允許複製');
+        }
+        setFeedback('已複製，可直接貼到聊天室。', 'ok');
+      } catch (err) {
+        console.error(err);
+        setFeedback('複製失敗，請再試一次。', 'err');
+      }
+    }
+
+    function renderTodayAgenda() {
+      if (!todayAgendaEl) return;
+      const now = new Date();
+      const dateStr = toISODate(now);
+      const groups = getTodayAgendaGroups(dateStr);
 
       const pointBadgeHtml = item => {
         const labels = {
-          start: ['起', '開始'],
-          end: ['迄', '結束'],
-          deadline: ['限', '截止日'],
+          start: ['▶', '開始'],
+          end: ['■', '結束'],
+          deadline: ['限', 'AR 截止'],
           reminder: ['提', '提醒'],
           holiday: ['休', '國定假日']
         };
@@ -3730,8 +3893,7 @@
         return `<a class="today-agenda-link" href="${escapeHtml(item.redmineUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}">${text}</a>`;
       };
 
-      const groupsHtml = [...groups.values()]
-        .sort((a, b) => a.teamOrder - b.teamOrder)
+      const groupsHtml = groups
         .map(group => `
           <div class="today-agenda-group">
             <div class="today-agenda-team ${escapeHtml(group.teamClass)}">${escapeHtml(group.team)}</div>
@@ -3747,7 +3909,11 @@
         `).join('');
 
       todayAgendaEl.innerHTML = `
-        <div class="today-agenda-date">今天是 ${escapeHtml(formatTodayDisplay(now))}</div>
+        <div class="today-agenda-side">
+          <div class="today-agenda-date">今天是 ${escapeHtml(formatTodayDisplay(now))}</div>
+          <button type="button" class="today-agenda-copy-btn" data-action="copy-today-agenda">複製今日任務</button>
+          <span id="todayAgendaCopyStatus" class="today-agenda-copy-status" aria-live="polite"></span>
+        </div>
         <div class="today-agenda-groups">
           ${groupsHtml || '<span class="today-agenda-empty">今天沒有日曆任務。</span>'}
         </div>
@@ -4376,6 +4542,14 @@ ${p.notes}` : ''}`;
         await deleteComment(comment.id);
       }
     });
+
+    if (todayAgendaEl) {
+      todayAgendaEl.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-action="copy-today-agenda"]');
+        if (!button) return;
+        copyTodayAgenda(button);
+      });
+    }
 
     const reminderFormEl = document.getElementById('reminderForm');
     if (reminderFormEl) {
