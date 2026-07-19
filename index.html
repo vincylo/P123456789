@@ -631,6 +631,7 @@
     }
 
 
+    /* v30：AR List 支援拖曳排序，並以 original_no 保留原始流水號。 */
     /* v26：AR 截止日、精簡欄寬、WBS Redmine。 */
     /* v25：狀態改為貼合文字的方形標籤、編號改稱序號，移除列內插入功能。 */
     /* v24：AR List 新增列改為最下方，並壓縮非內容欄寬。 */
@@ -708,7 +709,60 @@
       white-space: nowrap;
     }
 
-    /* v24：識別與操作欄貼近文字寬度，主要空間留給需求與回覆。 */
+    /* v30：AR 拖曳排序。拖曳只改 sort_order，不改 original_no。 */
+    #commentTable .ar-drag-col { width: 34px; }
+    #commentTable .ar-drag-cell {
+      width: 34px;
+      min-width: 34px;
+      max-width: 34px;
+      padding: 2px !important;
+      text-align: center;
+      vertical-align: middle !important;
+    }
+    .ar-drag-handle,
+    .ar-drag-handle-disabled {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: #64748b;
+      font: 800 15px/1 Arial, sans-serif;
+      letter-spacing: -3px;
+      user-select: none;
+    }
+    .ar-drag-handle {
+      cursor: grab;
+      touch-action: none;
+    }
+    .ar-drag-handle:hover,
+    .ar-drag-handle:focus-visible {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+      color: #334155;
+      outline: none;
+    }
+    .ar-drag-handle:active { cursor: grabbing; }
+    .ar-drag-handle-disabled {
+      cursor: not-allowed;
+      opacity: .32;
+    }
+    #commentTable tr.ar-row-dragging td {
+      opacity: .42;
+      background: #e0f2fe !important;
+    }
+    #commentTable tr.ar-drop-before td {
+      box-shadow: inset 0 3px 0 #2563eb;
+    }
+    #commentTable tr.ar-drop-after td {
+      box-shadow: inset 0 -3px 0 #2563eb;
+    }
+
+    /* v30：新增拖曳欄；識別與操作欄維持精簡，主要空間留給需求與回覆。 */
     #commentTable .ar-no-col { width: 42px; }
     #commentTable .ar-redmine-col { width: 76px; }
     #commentTable .ar-status-col { width: 78px; }
@@ -719,34 +773,36 @@
     #commentTable .ar-date-col { width: 104px; }
     #commentTable .comment-action-col { width: 82px; text-align: center; }
 
-    #commentTable th:nth-child(-n+5),
-    #commentTable td:nth-child(-n+5),
-    #commentTable th:nth-child(8),
-    #commentTable td:nth-child(8),
+    #commentTable th:nth-child(-n+6),
+    #commentTable td:nth-child(-n+6),
     #commentTable th:nth-child(9),
-    #commentTable td:nth-child(9) {
+    #commentTable td:nth-child(9),
+    #commentTable th:nth-child(10),
+    #commentTable td:nth-child(10) {
       padding-left: 3px;
       padding-right: 3px;
     }
 
+    #commentTable td:nth-child(1),
     #commentTable td:nth-child(2),
     #commentTable td:nth-child(3),
     #commentTable td:nth-child(4),
     #commentTable td:nth-child(5),
-    #commentTable td:nth-child(8),
-    #commentTable td:nth-child(9) {
+    #commentTable td:nth-child(6),
+    #commentTable td:nth-child(9),
+    #commentTable td:nth-child(10) {
       vertical-align: middle;
       text-align: center;
     }
 
-    #commentTable td:nth-child(3) select,
     #commentTable td:nth-child(4) select,
-    #commentTable td:nth-child(5) select {
+    #commentTable td:nth-child(5) select,
+    #commentTable td:nth-child(6) select {
       padding-left: 2px;
       padding-right: 2px;
       font-size: 10px;
     }
-    #commentTable td:nth-child(3) select {
+    #commentTable td:nth-child(4) select {
       height: 24px;
       padding-top: 1px;
       padding-bottom: 1px;
@@ -1370,6 +1426,7 @@
     }
 
     /* 固定精簡欄位寬度，剩餘空間只分配給「需求內容／進度回覆」。 */
+    #commentTable .ar-drag-col { width: 34px !important; }
     #commentTable .ar-no-col { width: 40px !important; }
     #commentTable .ar-redmine-col { width: 68px !important; }
     #commentTable .ar-status-col { width: 64px !important; }
@@ -1386,23 +1443,23 @@
       padding-right: 3px;
     }
 
-    #commentTable td:nth-child(4) .ar-view-text,
-    #commentTable td:nth-child(5) .ar-view-text {
+    #commentTable td:nth-child(5) .ar-view-text,
+    #commentTable td:nth-child(6) .ar-view-text {
       min-height: 0;
       white-space: nowrap;
       text-align: center;
       font-size: 10px;
     }
 
-    #commentTable td:nth-child(3) select {
+    #commentTable td:nth-child(4) select {
       width: 58px;
       height: 22px;
       padding: 1px;
       font-size: 9px;
     }
 
-    #commentTable td:nth-child(4) select { width: 60px; }
-    #commentTable td:nth-child(5) select { width: 46px; }
+    #commentTable td:nth-child(5) select { width: 60px; }
+    #commentTable td:nth-child(6) select { width: 46px; }
 
     .ar-date-stack {
       gap: 2px;
@@ -1696,6 +1753,149 @@
     .today-agenda-item.ar-deadline-overdue { border-left: 4px solid #b91c1c; }
     .today-agenda-item.ar-deadline-done { border-left: 4px solid #047857; }
 
+
+    /* v31：今日任務依 Team 分組；起／迄以小方形標記呈現，Redmine 連結維持原文字樣式。 */
+    .today-agenda {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 10px 14px;
+    }
+
+    .today-agenda-date {
+      padding-top: 4px;
+    }
+
+    .today-agenda-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .today-agenda-group {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      align-items: start;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .today-agenda-team {
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      padding: 3px 7px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .today-agenda-team.pm { border-left: 5px solid var(--bar-pm); }
+    .today-agenda-team.system { border-left: 5px solid var(--bar-system); }
+    .today-agenda-team.data { border-left: 5px solid var(--bar-data); }
+    .today-agenda-team.model { border-left: 5px solid var(--bar-model); }
+    .today-agenda-team.ar-deadline,
+    .today-agenda-team.ar-deadline-overdue { border-left: 5px solid #ea580c; }
+    .today-agenda-team.ar-deadline-done { border-left: 5px solid #047857; }
+    .today-agenda-team.reminder { border-left: 5px solid #b45309; }
+
+    .today-agenda-tasks {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .today-agenda-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 24px;
+      padding: 2px 7px 2px 4px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1f2937;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .today-agenda-point {
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1;
+      border: 1px solid currentColor;
+    }
+
+    .today-agenda-point.start {
+      color: #047857;
+      background: #ecfdf5;
+    }
+
+    .today-agenda-point.end {
+      color: #c2410c;
+      background: #fff7ed;
+    }
+
+    .today-agenda-point.deadline {
+      color: #b91c1c;
+      background: #fef2f2;
+    }
+
+    .today-agenda-point.reminder {
+      color: #92400e;
+      background: #fffbeb;
+    }
+
+    .today-agenda-point.holiday {
+      color: #9f1239;
+      background: #fff1f2;
+    }
+
+    .today-agenda-link {
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .today-agenda-link:hover,
+    .today-agenda-link:focus,
+    .today-agenda-link:visited {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .today-agenda-link:hover,
+    .today-agenda-link:focus {
+      outline: 1px dashed #94a3b8;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    @media (max-width: 760px) {
+      .today-agenda {
+        grid-template-columns: 1fr;
+      }
+      .today-agenda-group {
+        grid-template-columns: 76px minmax(0, 1fr);
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1720,7 +1920,7 @@
             顯示已結案
           </label>
           <button class="export-btn" id="exportCommentsBtn">匯出 CSV</button>
-          <button class="primary" id="addCommentRowBtn" title="新增在清單最下方，序號接續最後一筆">＋ 新增 AR</button>
+          <button class="primary" id="addCommentRowBtn" title="新增在清單最下方；原始流水號接續最後一號">＋ 新增 AR</button>
           <span id="commentStatus" class="sub-status"></span>
         </div>
       </div>
@@ -1728,7 +1928,8 @@
         <table id="commentTable">
           <thead>
             <tr>
-              <th class="ar-no-col">序號</th>
+              <th class="ar-drag-col" title="拖曳列可調整顯示順序">排序</th>
+              <th class="ar-no-col" title="原始流水號不會因拖曳而改變">序號</th>
               <th class="ar-redmine-col">Redmine</th>
               <th class="ar-status-col">狀態</th>
               <th class="comment-author-col">發起人</th>
@@ -1836,7 +2037,7 @@
 
     <p class="footer-note">
       共編保存方式：若 config.js 已設定 Supabase，WBS、AR List 與提醒會儲存在雲端並即時同步；若未設定，資料只會保存在目前瀏覽器的 localStorage。<br>
-      v25 更新：AR 新增列固定接在清單最下方；狀態改為貼合文字的方形標籤；「編號」改稱「序號」；移除列內插入功能。
+      v30 更新：AR List 可拖曳調整顯示順序；序號為永久保留的原始流水號，不會因拖曳而改變。
     </p>
   </main>
 
@@ -1996,6 +2197,7 @@
     let showDoneAr = localStorage.getItem(arShowDoneStorageKey) === 'true';
     const editingCommentIds = new Set();
     const commentEditSnapshots = new Map();
+    let draggedCommentId = '';
 
     const tbody = document.querySelector('#taskTable tbody');
     const statusEl = document.getElementById('status');
@@ -2138,8 +2340,8 @@
 
     function exportCommentsCsv() {
       const sorted = sortComments(comments);
-      const rows = sorted.map((c, index) => [
-        index + 1,
+      const rows = sorted.map(c => [
+        c.original_no,
         c.redmine_no,
         redmineUrl(c.redmine_no),
         c.status,
@@ -2840,6 +3042,7 @@
       const defaultSort = new Date(createdAt).getTime();
       return {
         id: String(c.id || safeUuid()),
+        original_no: Number.isInteger(Number(c.original_no)) && Number(c.original_no) > 0 ? Number(c.original_no) : 0,
         sort_order: Number.isFinite(Number(c.sort_order)) ? Number(c.sort_order) : defaultSort,
         redmine_no: String(c.redmine_no || '').replace(/\D/g, ''),
         status,
@@ -2852,6 +3055,39 @@
         updated_at: c.updated_at || createdAt,
         _isNew: Boolean(c._isNew)
       };
+    }
+
+    function ensureOriginalCommentNumbers(items = comments) {
+      const orderedByCreation = [...items].sort((a, b) =>
+        String(a.created_at).localeCompare(String(b.created_at)) ||
+        String(a.id).localeCompare(String(b.id))
+      );
+      const used = new Set();
+      let maxNo = 0;
+
+      orderedByCreation.forEach(comment => {
+        const value = Number(comment.original_no);
+        if (Number.isInteger(value) && value > 0 && !used.has(value)) {
+          comment.original_no = value;
+          used.add(value);
+          maxNo = Math.max(maxNo, value);
+        } else {
+          comment.original_no = 0;
+        }
+      });
+
+      orderedByCreation.forEach(comment => {
+        if (comment.original_no > 0) return;
+        do { maxNo += 1; } while (used.has(maxNo));
+        comment.original_no = maxNo;
+        used.add(maxNo);
+      });
+      return items;
+    }
+
+    function nextCommentOriginalNo() {
+      ensureOriginalCommentNumbers(comments);
+      return comments.reduce((maxNo, comment) => Math.max(maxNo, Number(comment.original_no) || 0), 0) + 1;
     }
 
     function sortComments(items = comments) {
@@ -2917,6 +3153,7 @@
         const rawComments = localStorage.getItem(commentsStorageKey);
         const rawReminders = localStorage.getItem(remindersStorageKey);
         comments = rawComments ? JSON.parse(rawComments).map(normalizeComment) : [];
+        ensureOriginalCommentNumbers(comments);
         reminders = rawReminders ? JSON.parse(rawReminders).map(normalizeReminder) : [];
       } catch (err) {
         console.error(err);
@@ -2926,6 +3163,7 @@
     }
 
     function saveCommentsLocal() {
+      ensureOriginalCommentNumbers(comments);
       localStorage.setItem(commentsStorageKey, JSON.stringify(comments));
       renderComments();
       setSubStatus(commentStatusEl, 'AR 已儲存在此瀏覽器', 'ok');
@@ -2948,6 +3186,7 @@
           .limit(500);
         if (error) throw error;
         comments = (data || []).map(normalizeComment);
+        ensureOriginalCommentNumbers(comments);
         setSubStatus(commentStatusEl, '雲端同步', 'ok');
       } catch (err) {
         console.error(err);
@@ -2991,18 +3230,21 @@
         const emptyText = comments.length && !showDoneAr
           ? '目前沒有未結案項目；可勾選「顯示已結案」查看 Done 項目。'
           : '目前沒有 AR，請按「＋ 新增 AR」。';
-        commentTbody.innerHTML = `<tr><td colspan="9" class="empty">${escapeHtml(emptyText)}</td></tr>`;
+        commentTbody.innerHTML = `<tr><td colspan="10" class="empty">${escapeHtml(emptyText)}</td></tr>`;
         return;
       }
 
-      commentTbody.innerHTML = visible.map((c, visibleIndex) => {
+      commentTbody.innerHTML = visible.map(c => {
         const isEditing = editingCommentIds.has(c.id);
-        const overallIndex = allSorted.findIndex(item => item.id === c.id) + 1;
+        const canDrag = !isEditing && !c._isNew;
         const rowClasses = [
           c.status === 'Done' ? 'ar-row-done' : '',
           isEditing ? 'ar-row-editing' : ''
         ].filter(Boolean).join(' ');
         const issueNo = String(c.redmine_no || '').replace(/\D/g, '');
+        const dragCell = canDrag
+          ? `<button class="ar-drag-handle" type="button" draggable="true" aria-label="拖曳 AR ${escapeHtml(c.original_no)} 調整顯示順序" title="按住拖曳以調整顯示順序">⋮⋮</button>`
+          : `<span class="ar-drag-handle-disabled" title="編輯中或尚未儲存時無法拖曳">⋮⋮</span>`;
         const redmineCell = isEditing
           ? `<input class="ar-redmine-input" type="text" inputmode="numeric" maxlength="12" data-comment-field="redmine_no" value="${escapeHtml(issueNo)}" placeholder="例如 27932" />`
           : issueNo
@@ -3036,7 +3278,8 @@
 
         return `
           <tr class="${rowClasses}" data-comment-id="${escapeHtml(c.id)}">
-            <td class="ar-no-cell" title="目前顯示序號 ${visibleIndex + 1}">${overallIndex}</td>
+            <td class="ar-drag-cell">${dragCell}</td>
+            <td class="ar-no-cell" title="原始流水號；拖曳排序不會改變">${escapeHtml(c.original_no)}</td>
             <td>${redmineCell}</td>
             <td>${statusCell}</td>
             <td>${authorCell}</td>
@@ -3070,9 +3313,10 @@
       return Number(sorted[sorted.length - 1].sort_order) + 1000;
     }
 
-    function createBlankComment(sortOrder = Date.now()) {
+    function createBlankComment(sortOrder = Date.now(), originalNo = nextCommentOriginalNo()) {
       return normalizeComment({
         id: safeUuid(),
+        original_no: originalNo,
         sort_order: sortOrder,
         redmine_no: '',
         status: 'To Do',
@@ -3098,6 +3342,7 @@
         updated_at: comment.updated_at
       };
       if (extended) {
+        payload.original_no = Number(comment.original_no);
         payload.sort_order = Number(comment.sort_order);
         payload.redmine_no = comment.redmine_no || '';
         payload.status = comment.status;
@@ -3108,7 +3353,7 @@
 
     function isMissingArColumnError(error) {
       const text = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase();
-      return text.includes('sort_order') || text.includes('redmine_no') || text.includes('status') || text.includes('deadline_date') || text.includes('schema cache');
+      return text.includes('original_no') || text.includes('sort_order') || text.includes('redmine_no') || text.includes('status') || text.includes('deadline_date') || text.includes('schema cache');
     }
 
     async function saveComment(comment) {
@@ -3124,15 +3369,26 @@
       }
       try {
         setSubStatus(commentStatusEl, 'AR 儲存中...');
-        const { error } = await db.from(COMMENTS_TABLE).upsert(commentPayload(comment, true), { onConflict: 'id' });
+        let data = null;
+        let error = null;
+        if (comment._isNew) {
+          const payload = commentPayload(comment, true);
+          // 雲端新增由資料庫 sequence 配發永久流水號，避免多人同時新增造成重號。
+          delete payload.original_no;
+          ({ data, error } = await db.from(COMMENTS_TABLE).insert(payload).select('id,original_no,sort_order,redmine_no,status,author,audience,message,reply,deadline_date,created_at,updated_at').single());
+        } else {
+          ({ data, error } = await db.from(COMMENTS_TABLE).upsert(commentPayload(comment, true), { onConflict: 'id' }).select('id,original_no,sort_order,redmine_no,status,author,audience,message,reply,deadline_date,created_at,updated_at').single());
+        }
         if (error) throw error;
+        if (data) Object.assign(comment, normalizeComment(data));
         comment._isNew = false;
+        ensureOriginalCommentNumbers(comments);
         setSubStatus(commentStatusEl, 'AR 已同步', 'ok');
         return true;
       } catch (err) {
         console.error(err);
         if (isMissingArColumnError(err)) {
-          setSubStatus(commentStatusEl, '請先執行 v26 Supabase 升級 SQL，新增 AR 截止日欄位後才能雲端同步', 'err');
+          setSubStatus(commentStatusEl, '請先執行 v30 Supabase 升級 SQL，新增原始流水號與拖曳排序功能後才能雲端同步', 'err');
         } else {
           setSubStatus(commentStatusEl, `AR 儲存失敗：${err.message || err}`, 'err');
         }
@@ -3164,7 +3420,67 @@
           row?.querySelector('[data-comment-field="message"]')?.focus({ preventScroll: true });
         });
       }
-      setSubStatus(commentStatusEl, '新增 AR 已加在清單最下方，尚未儲存', '');
+      setSubStatus(commentStatusEl, '新增 AR 已加在清單最下方，原始流水號已預留，尚未儲存', '');
+    }
+
+    function clearCommentDragIndicators() {
+      commentTbody?.querySelectorAll('.ar-row-dragging, .ar-drop-before, .ar-drop-after').forEach(row => {
+        row.classList.remove('ar-row-dragging', 'ar-drop-before', 'ar-drop-after');
+      });
+    }
+
+    async function persistCommentOrder(orderedComments) {
+      orderedComments.forEach((comment, index) => {
+        comment.sort_order = (index + 1) * 1000;
+      });
+      ignoreCommentRemoteUntil = Date.now() + 3000;
+
+      if (!isRemoteMode) {
+        localStorage.setItem(commentsStorageKey, JSON.stringify(comments));
+        setSubStatus(commentStatusEl, 'AR 顯示順序已儲存在此瀏覽器', 'ok');
+        return true;
+      }
+
+      try {
+        setSubStatus(commentStatusEl, 'AR 順序同步中...');
+        const p_items = orderedComments.map(comment => ({
+          id: comment.id,
+          sort_order: Number(comment.sort_order)
+        }));
+        const { error } = await db.rpc('reorder_project_comments', { p_items });
+        if (error) throw error;
+        setSubStatus(commentStatusEl, 'AR 順序已同步', 'ok');
+        return true;
+      } catch (err) {
+        console.error(err);
+        setSubStatus(commentStatusEl, '排序同步失敗，請先執行 v30 Supabase 升級 SQL', 'err');
+        return false;
+      }
+    }
+
+    async function moveCommentByDrag(dragId, targetId, placeAfter) {
+      if (!dragId || !targetId || dragId === targetId) return;
+      const previousOrder = comments.map(comment => ({ id: comment.id, sort_order: comment.sort_order }));
+      const ordered = sortComments(comments);
+      const fromIndex = ordered.findIndex(comment => comment.id === dragId);
+      if (fromIndex < 0) return;
+      const [dragged] = ordered.splice(fromIndex, 1);
+      let targetIndex = ordered.findIndex(comment => comment.id === targetId);
+      if (targetIndex < 0) return;
+      if (placeAfter) targetIndex += 1;
+      ordered.splice(targetIndex, 0, dragged);
+      comments = ordered;
+      ordered.forEach((comment, index) => { comment.sort_order = (index + 1) * 1000; });
+      renderComments();
+
+      const saved = await persistCommentOrder(ordered);
+      if (!saved) {
+        const previousMap = new Map(previousOrder.map(item => [item.id, item.sort_order]));
+        comments.forEach(comment => {
+          if (previousMap.has(comment.id)) comment.sort_order = previousMap.get(comment.id);
+        });
+        renderComments();
+      }
     }
 
     async function saveEditedComment(comment) {
@@ -3285,56 +3601,73 @@
       return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
     }
 
+
     function getTodayAgendaItems(dateStr) {
       const items = [];
       tasks.forEach(t => {
-        // 與日曆一致：不納入階段列的自動彙總 start / end。
+        // 與日曆一致：不納入階段列的自動彙總起訖日。
         if (t.is_section) return;
+        const issueNo = String(t.redmine_no || '').replace(/\D/g, '');
+        const issueUrl = redmineUrl(issueNo);
         TEAM_DEFS.forEach((team, teamOrder) => {
           const info = getEffectiveTeamSummary(t, team);
           if (!info.owner) return;
           if (cleanDate(info.start) === dateStr) {
             items.push({
-              kind: 'task', team: team.label, teamClass: team.className,
-              text: `${t.item} start`, seq: Number(t.seq) || 0, teamOrder, pointOrder: 0
+              kind: 'task', groupKey: team.key,
+              team: team.label, teamClass: team.className,
+              taskId: String(t.id), text: t.item,
+              pointType: 'start', redmineNo: issueNo, redmineUrl: issueUrl,
+              seq: Number(t.seq) || 0, teamOrder, pointOrder: 0
             });
           }
           if (cleanDate(info.end) === dateStr) {
             items.push({
-              kind: 'task', team: team.label, teamClass: team.className,
-              text: `${t.item} end`, seq: Number(t.seq) || 0, teamOrder, pointOrder: 1
+              kind: 'task', groupKey: team.key,
+              team: team.label, teamClass: team.className,
+              taskId: String(t.id), text: t.item,
+              pointType: 'end', redmineNo: issueNo, redmineUrl: issueUrl,
+              seq: Number(t.seq) || 0, teamOrder, pointOrder: 1
             });
           }
         });
       });
+
       sortComments(comments).forEach((comment, index) => {
         if (cleanDate(comment.deadline_date) !== dateStr) return;
         const issueNo = String(comment.redmine_no || '').replace(/\D/g, '');
+        const issueUrl = redmineUrl(issueNo);
         const message = String(comment.message || '').replace(/\s+/g, ' ').trim() || '未填需求內容';
         const isDone = comment.status === 'Done';
         items.push({
-          kind: 'ar-deadline', team: 'AR 截止',
+          kind: 'ar-deadline', groupKey: 'ar-deadline', team: 'AR 截止',
           teamClass: isDone ? 'ar-deadline-done' : 'ar-deadline',
           text: `${issueNo ? `#${issueNo} ` : ''}${message}`,
+          pointType: 'deadline', redmineNo: issueNo, redmineUrl: issueUrl,
           seq: 900000 + index, teamOrder: 90, pointOrder: 0
         });
       });
+
       reminders.forEach((r, index) => {
         if (cleanDate(r.reminder_date) !== dateStr) return;
         items.push({
-          kind: 'reminder', team: '提醒', teamClass: 'reminder',
-          text: r.title, seq: 999999, teamOrder: 99, pointOrder: index
+          kind: 'reminder', groupKey: 'reminder', team: '提醒', teamClass: 'reminder',
+          text: r.title, pointType: 'reminder', redmineNo: '', redmineUrl: '',
+          seq: 999999, teamOrder: 99, pointOrder: index
         });
       });
+
       const holidayName = TAIWAN_NATIONAL_HOLIDAYS[dateStr];
       if (holidayName) {
         items.push({
-          kind: 'holiday', team: '國定假日', teamClass: 'reminder',
-          text: holidayName, seq: 999998, teamOrder: 98, pointOrder: 0
+          kind: 'holiday', groupKey: 'holiday', team: '國定假日', teamClass: 'reminder',
+          text: holidayName, pointType: 'holiday', redmineNo: '', redmineUrl: '',
+          seq: 999998, teamOrder: 98, pointOrder: 0
         });
       }
+
       return items.sort((a, b) =>
-        a.seq - b.seq || a.teamOrder - b.teamOrder || a.pointOrder - b.pointOrder || a.text.localeCompare(b.text)
+        a.teamOrder - b.teamOrder || a.seq - b.seq || a.pointOrder - b.pointOrder || a.text.localeCompare(b.text)
       );
     }
 
@@ -3342,13 +3675,82 @@
       if (!todayAgendaEl) return;
       const now = new Date();
       const dateStr = toISODate(now);
-      const items = getTodayAgendaItems(dateStr);
-      const itemHtml = items.length
-        ? items.map(item => `<span class="today-agenda-item ${escapeHtml(item.teamClass)}"><strong>${escapeHtml(item.team)}：</strong>&nbsp;${escapeHtml(item.text)}</span>`).join('')
-        : '<span class="today-agenda-empty">今天沒有日曆任務。</span>';
+      const rawItems = getTodayAgendaItems(dateStr);
+
+      // 同一個 Team、同一個任務若同日開始且結束，合併為一個任務並同時顯示「起／迄」標記。
+      const merged = [];
+      const mergedTaskMap = new Map();
+      rawItems.forEach(item => {
+        if (item.kind !== 'task') {
+          merged.push({ ...item, pointTypes: [item.pointType] });
+          return;
+        }
+        const key = `${item.groupKey}::${item.taskId}`;
+        let target = mergedTaskMap.get(key);
+        if (!target) {
+          target = { ...item, pointTypes: [] };
+          mergedTaskMap.set(key, target);
+          merged.push(target);
+        }
+        if (!target.pointTypes.includes(item.pointType)) target.pointTypes.push(item.pointType);
+      });
+
+      const groups = new Map();
+      merged.forEach(item => {
+        if (!groups.has(item.groupKey)) {
+          groups.set(item.groupKey, {
+            key: item.groupKey,
+            team: item.team,
+            teamClass: item.teamClass,
+            teamOrder: item.teamOrder,
+            items: []
+          });
+        }
+        groups.get(item.groupKey).items.push(item);
+      });
+
+      const pointBadgeHtml = item => {
+        const labels = {
+          start: ['起', '開始'],
+          end: ['迄', '結束'],
+          deadline: ['限', '截止日'],
+          reminder: ['提', '提醒'],
+          holiday: ['休', '國定假日']
+        };
+        return item.pointTypes.map(type => {
+          const [mark, title] = labels[type] || ['', ''];
+          return `<span class="today-agenda-point ${escapeHtml(type)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">${escapeHtml(mark)}</span>`;
+        }).join('');
+      };
+
+      const taskTextHtml = item => {
+        const text = escapeHtml(item.text);
+        if (!item.redmineUrl) return `<span>${text}</span>`;
+        const title = `開啟 Redmine #${item.redmineNo}`;
+        return `<a class="today-agenda-link" href="${escapeHtml(item.redmineUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}">${text}</a>`;
+      };
+
+      const groupsHtml = [...groups.values()]
+        .sort((a, b) => a.teamOrder - b.teamOrder)
+        .map(group => `
+          <div class="today-agenda-group">
+            <div class="today-agenda-team ${escapeHtml(group.teamClass)}">${escapeHtml(group.team)}</div>
+            <div class="today-agenda-tasks">
+              ${group.items.map(item => `
+                <span class="today-agenda-item ${escapeHtml(item.teamClass)}">
+                  ${pointBadgeHtml(item)}
+                  ${taskTextHtml(item)}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+
       todayAgendaEl.innerHTML = `
         <div class="today-agenda-date">今天是 ${escapeHtml(formatTodayDisplay(now))}</div>
-        <div class="today-agenda-list">${itemHtml}</div>
+        <div class="today-agenda-groups">
+          ${groupsHtml || '<span class="today-agenda-empty">今天沒有日曆任務。</span>'}
+        </div>
       `;
     }
 
@@ -3854,6 +4256,70 @@ ${p.notes}` : ''}`;
       });
     }
 
+    commentTbody.addEventListener('dragstart', (e) => {
+      const handle = e.target.closest('.ar-drag-handle');
+      if (!handle) {
+        e.preventDefault();
+        return;
+      }
+      const row = handle.closest('tr[data-comment-id]');
+      const comment = comments.find(item => item.id === row?.dataset.commentId);
+      if (!row || !comment || editingCommentIds.has(comment.id) || comment._isNew) {
+        e.preventDefault();
+        return;
+      }
+      draggedCommentId = comment.id;
+      row.classList.add('ar-row-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', comment.id);
+      }
+    });
+
+    commentTbody.addEventListener('dragover', (e) => {
+      if (!draggedCommentId) return;
+      const row = e.target.closest('tr[data-comment-id]');
+      if (!row || row.dataset.commentId === draggedCommentId) return;
+      e.preventDefault();
+      clearCommentDragIndicators();
+      const draggedRow = commentTbody.querySelector(`[data-comment-id="${CSS.escape(draggedCommentId)}"]`);
+      draggedRow?.classList.add('ar-row-dragging');
+      const rect = row.getBoundingClientRect();
+      const placeAfter = e.clientY >= rect.top + rect.height / 2;
+      row.classList.add(placeAfter ? 'ar-drop-after' : 'ar-drop-before');
+
+      const wrap = commentTbody.closest('.comment-table-wrap');
+      if (wrap) {
+        const wrapRect = wrap.getBoundingClientRect();
+        if (e.clientY < wrapRect.top + 38) wrap.scrollTop -= 14;
+        if (e.clientY > wrapRect.bottom - 38) wrap.scrollTop += 14;
+      }
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    });
+
+    commentTbody.addEventListener('drop', async (e) => {
+      if (!draggedCommentId) return;
+      const row = e.target.closest('tr[data-comment-id]');
+      if (!row || row.dataset.commentId === draggedCommentId) {
+        clearCommentDragIndicators();
+        draggedCommentId = '';
+        return;
+      }
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const placeAfter = e.clientY >= rect.top + rect.height / 2;
+      const dragId = draggedCommentId;
+      const targetId = row.dataset.commentId;
+      clearCommentDragIndicators();
+      draggedCommentId = '';
+      await moveCommentByDrag(dragId, targetId, placeAfter);
+    });
+
+    commentTbody.addEventListener('dragend', () => {
+      clearCommentDragIndicators();
+      draggedCommentId = '';
+    });
+
     commentTbody.addEventListener('input', (e) => {
       const field = e.target.dataset.commentField;
       if (!field) return;
@@ -3889,6 +4355,10 @@ ${p.notes}` : ''}`;
     });
 
     commentTbody.addEventListener('click', async (e) => {
+      if (e.target.closest('.ar-drag-handle')) {
+        e.preventDefault();
+        return;
+      }
       const btn = e.target.closest('button[data-comment-action]');
       if (!btn) return;
       const row = btn.closest('[data-comment-id]');
