@@ -2024,12 +2024,295 @@
       }
     }
 
+
+    /* v38：專案名稱旁的精簡通訊錄，可依群組勾選並複製 Email。 */
+    .contact-book {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .contact-book-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 27px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1px solid #94a3b8;
+      background: #ffffff;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .contact-book-btn[aria-expanded="true"] {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+    }
+
+    .contact-book-panel {
+      position: absolute;
+      top: calc(100% + 7px);
+      left: 0;
+      z-index: 3000;
+      width: 410px;
+      max-width: calc(100vw - 28px);
+      max-height: min(74vh, 560px);
+      overflow: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 16px 38px rgba(15, 23, 42, .2);
+      padding: 9px;
+      color: #1f2937;
+    }
+
+    .contact-book-panel[hidden] { display: none !important; }
+
+    .contact-book-head,
+    .contact-book-toolbar,
+    .contact-book-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .contact-book-head {
+      justify-content: space-between;
+      padding: 0 1px 7px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .contact-book-title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .contact-book-close {
+      width: 25px;
+      height: 25px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #64748b;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .contact-book-close:hover { background: #f1f5f9; }
+
+    .contact-book-toolbar {
+      padding: 7px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .contact-book-tool-btn {
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+    }
+
+    .contact-selected-count {
+      margin-left: auto;
+      color: #64748b;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .contact-section {
+      padding: 7px 0 2px;
+      border-bottom: 1px dashed #dbe4f0;
+    }
+
+    .contact-section:last-of-type { border-bottom: 0; }
+
+    .contact-group-label,
+    .contact-subgroup-label,
+    .contact-email-label {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .contact-group-label {
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .contact-subgroup {
+      margin: 6px 0 3px 19px;
+      padding-left: 8px;
+      border-left: 3px solid #e2e8f0;
+    }
+
+    .contact-subgroup-label {
+      gap: 5px;
+      margin-bottom: 3px;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .contact-email-list {
+      display: grid;
+      gap: 2px;
+      margin: 3px 0 0 19px;
+    }
+
+    .contact-subgroup .contact-email-list { margin-left: 18px; }
+
+    .contact-email-label {
+      gap: 6px;
+      min-height: 22px;
+      padding: 2px 4px;
+      border-radius: 5px;
+      color: #334155;
+      font-size: 10.5px;
+    }
+
+    .contact-email-label:hover { background: #f8fafc; }
+
+    .contact-email-label span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contact-book-panel input[type="checkbox"] {
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: #2563eb;
+    }
+
+    .contact-book-footer {
+      justify-content: flex-end;
+      padding-top: 8px;
+      position: sticky;
+      bottom: -9px;
+      background: #ffffff;
+    }
+
+    .contact-copy-status {
+      flex: 1 1 auto;
+      min-width: 0;
+      color: #047857;
+      font-size: 10px;
+    }
+
+    .contact-copy-status.err { color: #b91c1c; }
+
+    .contact-copy-btn {
+      padding: 5px 9px;
+      border-color: #1f4e8c;
+      background: #1f4e8c;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .contact-copy-btn:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 560px) {
+      .header-line { gap: 7px; }
+      .contact-book-btn { padding: 3px 6px; }
+      .contact-book-panel {
+        position: fixed;
+        top: 54px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+      }
+    }
+
   </style>
 </head>
 <body>
   <header>
     <div class="header-line">
       <h1>uO-PTI P8</h1>
+      <div class="contact-book">
+        <button type="button" id="contactBookBtn" class="contact-book-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="contactBookPanel" title="開啟專案通訊錄">📇 通訊錄</button>
+        <div id="contactBookPanel" class="contact-book-panel" role="dialog" aria-label="專案通訊錄" hidden>
+          <div class="contact-book-head">
+            <span class="contact-book-title">專案通訊錄</span>
+            <button type="button" class="contact-book-close" data-contact-action="close" aria-label="關閉通訊錄">×</button>
+          </div>
+          <div class="contact-book-toolbar">
+            <button type="button" class="contact-book-tool-btn" data-contact-action="select-all">全選</button>
+            <button type="button" class="contact-book-tool-btn" data-contact-action="clear">清除</button>
+            <span id="contactSelectedCount" class="contact-selected-count">已選 0</span>
+          </div>
+
+          <section class="contact-section">
+            <label class="contact-group-label">
+              <input type="checkbox" data-contact-master="pti">
+              <span>外部－PTI</span>
+            </label>
+            <div class="contact-email-list">
+              <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="pti" value="larrysmlin@pti.com.tw"><span>larrysmlin@pti.com.tw</span></label>
+              <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="pti" value="scotthsu@pti.com.tw"><span>scotthsu@pti.com.tw</span></label>
+              <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="pti" value="shocktsai@pti.com.tw"><span>shocktsai@pti.com.tw</span></label>
+            </div>
+          </section>
+
+          <section class="contact-section">
+            <label class="contact-group-label">
+              <input type="checkbox" data-contact-master="internal">
+              <span>內部－ALL</span>
+            </label>
+
+            <div class="contact-subgroup">
+              <label class="contact-subgroup-label"><input type="checkbox" data-contact-master="other"><span>其他</span></label>
+              <div class="contact-email-list">
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal other" value="karenhung@youthought.com.tw"><span>karenhung@youthought.com.tw</span></label>
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal other" value="bordenchen@youthought.com.tw"><span>bordenchen@youthought.com.tw</span></label>
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal other" value="waynelu@youthought.com.tw"><span>waynelu@youthought.com.tw</span></label>
+              </div>
+            </div>
+
+            <div class="contact-subgroup">
+              <label class="contact-subgroup-label"><input type="checkbox" data-contact-master="model"><span>MODEL</span></label>
+              <div class="contact-email-list">
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal model" value="dannyhuang@youthought.com.tw"><span>dannyhuang@youthought.com.tw</span></label>
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal model" value="jerrychen@youthought.com.tw"><span>jerrychen@youthought.com.tw</span></label>
+              </div>
+            </div>
+
+            <div class="contact-subgroup">
+              <label class="contact-subgroup-label"><input type="checkbox" data-contact-master="data"><span>DATA</span></label>
+              <div class="contact-email-list">
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal data" value="eugenefang@youthought.com.tw"><span>eugenefang@youthought.com.tw</span></label>
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal data" value="vanessakuo@youthought.com.tw"><span>vanessakuo@youthought.com.tw</span></label>
+              </div>
+            </div>
+
+            <div class="contact-subgroup">
+              <label class="contact-subgroup-label"><input type="checkbox" data-contact-master="system"><span>SYSTEM</span></label>
+              <div class="contact-email-list">
+                <label class="contact-email-label"><input type="checkbox" data-contact-email data-contact-groups="internal system" value="jasonhu@youthought.com.tw"><span>jasonhu@youthought.com.tw</span></label>
+              </div>
+            </div>
+          </section>
+
+          <div class="contact-book-footer">
+            <span id="contactCopyStatus" class="contact-copy-status" aria-live="polite"></span>
+            <button type="button" id="copySelectedContactsBtn" class="contact-copy-btn" disabled>複製所選 Email</button>
+          </div>
+        </div>
+      </div>
       <span id="status" class="status warn">初始化中...</span>
     </div>
     <div id="todayAgenda" class="today-agenda" aria-live="polite">
@@ -4819,6 +5102,148 @@ ${p.notes}` : ''}`;
       window.clearTimeout(ganttResizeTimer);
       ganttResizeTimer = window.setTimeout(renderGantt, 120);
     });
+
+
+
+    // v38：通訊錄群組勾選與 Email 複製。
+    const contactBookBtn = document.getElementById('contactBookBtn');
+    const contactBookPanel = document.getElementById('contactBookPanel');
+    const contactSelectedCountEl = document.getElementById('contactSelectedCount');
+    const contactCopyStatusEl = document.getElementById('contactCopyStatus');
+    const copySelectedContactsBtn = document.getElementById('copySelectedContactsBtn');
+
+    function contactEmailInputs() {
+      return [...(contactBookPanel?.querySelectorAll('[data-contact-email]') || [])];
+    }
+
+    function contactMasterInputs() {
+      return [...(contactBookPanel?.querySelectorAll('[data-contact-master]') || [])];
+    }
+
+    function contactInputsForGroup(groupName) {
+      return contactEmailInputs().filter(input =>
+        String(input.dataset.contactGroups || '').split(/\s+/).includes(groupName)
+      );
+    }
+
+    function updateContactBookState() {
+      const emails = contactEmailInputs();
+      contactMasterInputs().forEach(master => {
+        const children = contactInputsForGroup(master.dataset.contactMaster);
+        const checkedCount = children.filter(input => input.checked).length;
+        master.checked = children.length > 0 && checkedCount === children.length;
+        master.indeterminate = checkedCount > 0 && checkedCount < children.length;
+      });
+
+      const selectedCount = emails.filter(input => input.checked).length;
+      if (contactSelectedCountEl) contactSelectedCountEl.textContent = `已選 ${selectedCount}`;
+      if (copySelectedContactsBtn) copySelectedContactsBtn.disabled = selectedCount === 0;
+    }
+
+    function setContactPanelOpen(open) {
+      if (!contactBookPanel || !contactBookBtn) return;
+      contactBookPanel.hidden = !open;
+      contactBookBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        updateContactBookState();
+        window.setTimeout(() => contactBookPanel.querySelector('input, button')?.focus(), 0);
+      }
+    }
+
+    async function copyContactText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand('copy');
+      textarea.remove();
+      if (!copied) throw new Error('瀏覽器未允許複製');
+    }
+
+    async function copySelectedContacts() {
+      const selected = [...new Set(contactEmailInputs()
+        .filter(input => input.checked)
+        .map(input => input.value.trim())
+        .filter(Boolean))];
+      if (!selected.length) return;
+
+      try {
+        await copyContactText(selected.join('; '));
+        if (contactCopyStatusEl) {
+          contactCopyStatusEl.textContent = `已複製 ${selected.length} 個 Email`;
+          contactCopyStatusEl.className = 'contact-copy-status';
+        }
+        const oldText = copySelectedContactsBtn.textContent;
+        copySelectedContactsBtn.textContent = '已複製';
+        window.setTimeout(() => {
+          copySelectedContactsBtn.textContent = oldText;
+          if (contactCopyStatusEl) contactCopyStatusEl.textContent = '';
+        }, 1600);
+      } catch (err) {
+        console.error(err);
+        if (contactCopyStatusEl) {
+          contactCopyStatusEl.textContent = '複製失敗，請再試一次';
+          contactCopyStatusEl.className = 'contact-copy-status err';
+        }
+      }
+    }
+
+    if (contactBookBtn && contactBookPanel) {
+      contactBookBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setContactPanelOpen(contactBookPanel.hidden);
+      });
+
+      contactBookPanel.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const actionBtn = event.target.closest('[data-contact-action]');
+        if (!actionBtn) return;
+        const action = actionBtn.dataset.contactAction;
+        if (action === 'close') setContactPanelOpen(false);
+        if (action === 'select-all') {
+          contactEmailInputs().forEach(input => { input.checked = true; });
+          updateContactBookState();
+        }
+        if (action === 'clear') {
+          contactEmailInputs().forEach(input => { input.checked = false; });
+          updateContactBookState();
+        }
+      });
+
+      contactBookPanel.addEventListener('change', (event) => {
+        const master = event.target.closest('[data-contact-master]');
+        if (master) {
+          contactInputsForGroup(master.dataset.contactMaster).forEach(input => {
+            input.checked = master.checked;
+          });
+        }
+        if (event.target.matches('[data-contact-email], [data-contact-master]')) {
+          if (contactCopyStatusEl) contactCopyStatusEl.textContent = '';
+          updateContactBookState();
+        }
+      });
+
+      document.addEventListener('click', () => setContactPanelOpen(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !contactBookPanel.hidden) {
+          setContactPanelOpen(false);
+          contactBookBtn.focus();
+        }
+      });
+    }
+
+    if (copySelectedContactsBtn) {
+      copySelectedContactsBtn.addEventListener('click', copySelectedContacts);
+    }
+
+    updateContactBookState();
 
     (async function init() {
       try {
