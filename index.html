@@ -1165,6 +1165,7 @@
       white-space: normal;
       overflow-wrap: anywhere;
     }
+    .today-agenda-item.all { border-left: 4px solid var(--bar-overall); }
     .today-agenda-item.pm { border-left: 4px solid var(--bar-pm); }
     .today-agenda-item.system { border-left: 4px solid var(--bar-system); }
     .today-agenda-item.data { border-left: 4px solid var(--bar-data); }
@@ -1754,7 +1755,7 @@
     .today-agenda-item.ar-deadline-done { border-left: 4px solid #047857; }
 
 
-    /* v32：今日任務依 Team 分組；AR 截止依「對象」分派，並提供聊天室文字複製。 */
+    /* v35：今日任務新增 ALL 群組；AR 對象為 ALL 時集中顯示於最上方，不再重複到各 Team。 */
     .today-agenda {
       display: grid;
       grid-template-columns: 170px minmax(0, 1fr);
@@ -1841,6 +1842,7 @@
       white-space: nowrap;
     }
 
+    .today-agenda-team.all { border-left: 5px solid var(--bar-overall); }
     .today-agenda-team.pm { border-left: 5px solid var(--bar-pm); }
     .today-agenda-team.system { border-left: 5px solid var(--bar-system); }
     .today-agenda-team.data { border-left: 5px solid var(--bar-data); }
@@ -1873,14 +1875,20 @@
     }
 
     .today-agenda-point {
-      flex: 0 0 18px;
-      width: 18px;
-      height: 18px;
+      flex: 0 0 20px;
+      width: 20px;
+      min-width: 20px;
+      max-width: 20px;
+      height: 20px;
+      min-height: 20px;
+      max-height: 20px;
+      padding: 0;
+      box-sizing: border-box;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 3px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 900;
       line-height: 1;
       border: 1px solid currentColor;
@@ -1894,6 +1902,8 @@
     .today-agenda-point.end {
       color: #c2410c;
       background: #fff7ed;
+      font-size: 14px;
+      line-height: 1;
     }
 
     .today-agenda-point.deadline {
@@ -1905,6 +1915,9 @@
       color: #92400e;
       background: #fffbeb;
     }
+
+    /* v34：開始與結束圖示固定同尺寸，放大結束方塊。 */
+    /* v35：AR 對象 ALL 改於今日任務最上方獨立顯示。 */
 
     .today-agenda-point.holiday {
       color: #9f1239;
@@ -3654,12 +3667,19 @@
     }
 
 
+    const TODAY_AGENDA_ALL_GROUP = Object.freeze({
+      key: 'all',
+      label: 'ALL',
+      className: 'all'
+    });
+
     function agendaTargetsForAudience(audience) {
       const normalized = String(audience || 'ALL').trim().toUpperCase();
-      if (normalized === 'ALL') return TEAM_DEFS.map((team, teamOrder) => ({ team, teamOrder }));
+      // AR 對象為 ALL 時，集中放在最上方的 ALL 群組，避免同一筆任務在四個 Team 重複顯示。
+      if (normalized === 'ALL') return [{ team: TODAY_AGENDA_ALL_GROUP, teamOrder: -1 }];
       const teamOrder = TEAM_DEFS.findIndex(team => team.label.toUpperCase() === normalized);
       if (teamOrder >= 0) return [{ team: TEAM_DEFS[teamOrder], teamOrder }];
-      return TEAM_DEFS.map((team, index) => ({ team, teamOrder: index }));
+      return [{ team: TODAY_AGENDA_ALL_GROUP, teamOrder: -1 }];
     }
 
     function getTodayAgendaItems(dateStr) {
@@ -3693,7 +3713,7 @@
         });
       });
 
-      // AR 截止依「對象」放入對應 Team；對象為 ALL 時，每個 Team 都會收到同一筆截止任務。
+      // AR 截止依「對象」分組；對象為 ALL 時集中放在最上方的 ALL 群組。
       sortComments(comments).forEach((comment, index) => {
         if (cleanDate(comment.deadline_date) !== dateStr) return;
         const issueNo = String(comment.redmine_no || '').replace(/\D/g, '');
@@ -3774,15 +3794,17 @@
       return [...groups.values()].sort((a, b) => a.teamOrder - b.teamOrder);
     }
 
+    // v33：聊天室純文字無法保留 CSS 顏色，因此複製內容改用彩色 Emoji 圖示。
+    // 🟢＝開始、🔴＝結束、🟣＝同日開始與結束、⏰＝AR 截止。
     function todayAgendaSymbol(item) {
       const types = item.pointTypes || [item.pointType];
-      if (types.includes('start') && types.includes('end')) return '◆';
-      if (types.includes('start')) return '▶';
-      if (types.includes('end')) return '■';
+      if (types.includes('start') && types.includes('end')) return '🟣';
+      if (types.includes('start')) return '🟢';
+      if (types.includes('end')) return '🔴';
       if (types.includes('deadline')) return '⏰';
       if (types.includes('reminder')) return '🔔';
-      if (types.includes('holiday')) return '●';
-      return '•';
+      if (types.includes('holiday')) return '🟡';
+      return '⚪';
     }
 
     function buildTodayAgendaCopyText(date = new Date()) {
@@ -3792,11 +3814,13 @@
       const lines = [
         `今天是 ${formatTodayDisplay(date)}`,
         '各組任務如下：',
+        '🟢 開始｜🔴 結束｜🟣 同日開始與結束｜⏰ AR 截止',
         ''
       ];
 
-      // 固定輸出四個 Team；沒有任務時明確標示「無」。
-      TEAM_DEFS.forEach(team => {
+      // 固定輸出 ALL 與四個 Team；ALL 永遠排在最上方，沒有任務時明確標示「無」。
+      const fixedAgendaGroups = [TODAY_AGENDA_ALL_GROUP, ...TEAM_DEFS];
+      fixedAgendaGroups.forEach(team => {
         const group = groupMap.get(team.key);
         lines.push(`${team.label}：`);
         if (!group?.items?.length) {
@@ -3811,7 +3835,7 @@
       });
 
       groups
-        .filter(group => !TEAM_DEFS.some(team => team.key === group.key))
+        .filter(group => !fixedAgendaGroups.some(team => team.key === group.key))
         .forEach(group => {
           lines.push(`${group.team}：`);
           group.items.forEach(item => lines.push(`${todayAgendaSymbol(item)} ${item.text}`));
